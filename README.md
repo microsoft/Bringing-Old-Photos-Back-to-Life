@@ -145,7 +145,6 @@ We use a progressive generator to refine the face regions of old photos. More de
 If you find our work is useful for your research, please consider citing the following papers :)
 
 ```
-
 @inproceedings{wan2020bringing,
 title={Bringing Old Photos Back to Life},
 author={Wan, Ziyu and Zhang, Bo and Chen, Dongdong and Zhang, Pan and Chen, Dong and Liao, Jing and Wen, Fang},
@@ -153,11 +152,9 @@ booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern
 pages={2747--2757},
 year={2020}
 }
-
 ```
 
 ```
-
 @misc{2009.07047,
 Author = {Ziyu Wan and Bo Zhang and Dongdong Chen and Pan Zhang and Dong Chen and Jing Liao and Fang Wen},
 Title = {Old Photo Restoration via Deep Latent Space Translation},
@@ -176,6 +173,3 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 ## Maintenance
 
 This project is currently maintained by Ziyu Wan and is for academic research use only. If you have any questions, feel free to contact raywzy@gmail.com.
-```
-
-```
