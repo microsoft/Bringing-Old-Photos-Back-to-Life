@@ -1,64 +1,184 @@
----
-page_type: sample
-languages:
-- csharp
-products:
-- dotnet
-description: "Add 150 character max description"
-urlFragment: "update-this-to-unique-url-stub"
----
+# Old Photo Restoration (Official PyTorch Implementation)
 
-# Official Microsoft Sample
+<img src='imgs/0001.jpg'/>
 
-<!-- 
-Guidelines on README format: https://review.docs.microsoft.com/help/onboard/admin/samples/concepts/readme-template?branch=master
+### [Project Page](http://raywzy.com/Old_Photo/) | [Paper (CVPR version)](https://arxiv.org/abs/2004.09484) | [Paper (Journal version)](https://arxiv.org/pdf/2009.07047v1.pdf) | [Pretrained Model](https://portland-my.sharepoint.com/:f:/g/personal/ziyuwan2-c_ad_cityu_edu_hk/Eh1gtjfLiWtLiBDGZhaTvokBvDUdvA5j49f_NpL_Pp9FPA?e=7EddTf)
 
-Guidance on onboarding samples to docs.microsoft.com/samples: https://review.docs.microsoft.com/help/onboard/admin/samples/process/onboarding?branch=master
+**Bringing Old Photos Back to Life, CVPR2020 (Oral)**
 
-Taxonomies for products and languages: https://review.docs.microsoft.com/new-hope/information-architecture/metadata/taxonomies?branch=master
--->
+**Old Photo Restoration via Deep Latent Space Translation, PAMI Under Review**
 
-Give a short description for your sample here. What does it do and why is it important?
+[Ziyu Wan](http://raywzy.com/)<sup>1</sup>,
+[Bo Zhang](https://www.microsoft.com/en-us/research/people/zhanbo/)<sup>2</sup>,
+[Dongdong Chen](http://www.dongdongchen.bid/)<sup>3</sup>,
+[Pan Zhang](https://panzhang0212.github.io/)<sup>4</sup>,
+[Dong Chen](https://www.microsoft.com/en-us/research/people/doch/)<sup>2</sup>,
+[Jing Liao](https://liaojing.github.io/html/)<sup>1</sup>,
+[Fang Wen](https://www.microsoft.com/en-us/research/people/fangwen/)<sup>2</sup> <br>
+<sup>1</sup>City University of Hong Kong, <sup>2</sup>Microsoft Research Asia, <sup>3</sup>Microsoft Cloud AI, <sup>4</sup>USTC
 
-## Contents
+## Installation
 
-Outline the file contents of the repository. It helps users navigate the codebase, build configuration and any related assets.
+Clone the Synchronized-BatchNorm-PyTorch repository for
 
-| File/folder       | Description                                |
-|-------------------|--------------------------------------------|
-| `src`             | Sample source code.                        |
-| `.gitignore`      | Define what to ignore at commit time.      |
-| `CHANGELOG.md`    | List of changes to the sample.             |
-| `CONTRIBUTING.md` | Guidelines for contributing to the sample. |
-| `README.md`       | This README file.                          |
-| `LICENSE`         | The license for the sample.                |
+```
+cd Face_Enhancement/models/networks/
+git clone https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
+cp -rf Synchronized-BatchNorm-PyTorch/sync_batchnorm .
+cd ../../../
+```
 
-## Prerequisites
+```
+cd Global/detection_models
+git clone https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
+cp -rf Synchronized-BatchNorm-PyTorch/sync_batchnorm .
+cd ../../
+```
 
-Outline the required components and tools that a user might need to have on their machine in order to run the sample. This can be anything from frameworks, SDKs, OS versions or IDE releases.
+Download the landmark detection pretrained model
 
-## Setup
+```
+cd Face_Detection/
+wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
+bzip2 -d shape_predictor_68_face_landmarks.dat.bz2
+cd ../
+```
 
-Explain how to prepare the sample once the user clones or downloads the repository. The section should outline every step necessary to install dependencies and set up any settings (for example, API keys and output folders).
+Download the pretrained model from shared one-drive links, put the Old_Photo_Pretrain_Model/Face_Enhancement/checkpoints.zip under /Face_Enhancement, put the Old_Photo_Pretrain_Model/Global/checkpoints.zip under /Global. Then unzip them respectively.
 
-## Running the sample
+```
+cd Face_Enhancement/
+unzip checkpoints.zip
+cd ../
+cd Global/
+unzip checkpoints.zip
+cd ../
+```
 
-Outline step-by-step instructions to execute the sample and see its output. Include steps for executing the sample from the IDE, starting specific services in the Azure portal or anything related to the overall launch of the code.
+Install dependencies:
 
-## Key concepts
+```bash
+pip install -r requirements.txt
+```
 
-Provide users with more context on the tools and services used in the sample. Explain some of the code that is being used and how services interact with each other.
+## How to use?
 
-## Contributing
+### 1) Full Pipeline
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
+You could easily restore the old photos with one simple command after installation and downloading the pretrained model.
 
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
+For images without scratches:
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+```
+python run.py --input_folder [test_image_folder_path] \
+              --output_folder [output_path] \
+              --GPU 0
+```
+
+For scratched images:
+
+```
+python run.py --input_folder [test_image_folder_path] \
+              --output_folder [output_path] \
+              --GPU 0 \
+              --with_scratch
+```
+
+Note: Please try to use the absolute path. The final results will be saved in [output_path/final_output]. You could also check the produced results of different steps in [output_path].
+
+### 2) Scratch Detection
+
+Currently we don't plan to release the scratched old photos dataset with labels directly. If you want to get the paired data, you could use our pretrained model to test the collected images to obtain the labels.
+
+```
+cd Global/
+python detection.py --test_path [test_image_folder_path] \
+                    --output_dir [output_path] \
+                    --input_size [resize_256|full_size|scale_256]
+```
+
+<img src='imgs/scratch_detection.png'>
+
+### 3) Global Restoration
+
+A triplet domain translation network is proposed to solve both structured degradation and unstructured degradation of old photos.
+
+<p align="center">
+<img src='imgs/pipeline.PNG' width="50%" height="50%"/>
+</p>
+```
+cd Global/
+python test.py --Scratch_and_Quality_restore \
+               --test_input [test_image_folder_path] \
+               --test_mask [corresponding mask] \
+               --outputs_dir [output_path]
+
+python test.py --Quality_restore \
+ --test_input [test_image_folder_path] \
+ --outputs_dir [output_path]
+
+```
+
+<img src='imgs/global.png'>
+
+
+### 4) Face Enhancement
+
+We use a progressive generator to refine the face regions of old photos. More details could be found in our journal submission and [/Face_Enhancement] folder.
+
+<p align="center">
+<img src='imgs/face_pipeline.jpg' width="60%" height="60%"/>
+</p>
+
+
+<img src='imgs/face.png'>
+
+## To Do
+- [x] Clean testing code
+- [x] Release pretrained model
+- [ ] Replace face detection module (dlib) with RetinaFace
+- [ ] Release training code
+- [ ] Develop GUI for easy use
+
+
+
+## Citation
+
+If you find our work is useful for your research, please consider citing the following papers :)
+
+```
+
+@inproceedings{wan2020bringing,
+title={Bringing Old Photos Back to Life},
+author={Wan, Ziyu and Zhang, Bo and Chen, Dongdong and Zhang, Pan and Chen, Dong and Liao, Jing and Wen, Fang},
+booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+pages={2747--2757},
+year={2020}
+}
+
+```
+
+```
+
+@misc{2009.07047,
+Author = {Ziyu Wan and Bo Zhang and Dongdong Chen and Pan Zhang and Dong Chen and Jing Liao and Fang Wen},
+Title = {Old Photo Restoration via Deep Latent Space Translation},
+Year = {2020},
+Eprint = {arXiv:2009.07047},
+}
+
+```
+
+
+
+## License
+
+The codes and the pretrained model in this repository are under the MIT license as specified by the LICENSE file. We use our labeled dataset to train the scratch detection model.
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+
+## Maintenance
+
+This project is currently maintained by Ziyu Wan and is for academic research use only. If you have any questions, feel free to contact raywzy@gmail.com.
+```

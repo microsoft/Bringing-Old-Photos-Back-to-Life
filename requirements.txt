@@ -1,0 +1,9 @@
+dlib
+scikit-image
+easydict
+PyYAML
+dominate>=2.3.1
+dill
+tensorboardX
+scipy
+opencv-python

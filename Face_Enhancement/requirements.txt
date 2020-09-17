@@ -1,0 +1,9 @@
+torch>=1.0.0
+torchvision
+dominate>=2.3.1
+wandb
+dill
+scikit-image
+tensorboardX
+scipy
+opencv-python
