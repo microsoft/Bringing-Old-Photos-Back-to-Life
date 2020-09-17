@@ -106,6 +106,7 @@ A triplet domain translation network is proposed to solve both structured degrad
 <p align="center">
 <img src='imgs/pipeline.PNG' width="50%" height="50%"/>
 </p>
+
 ```
 cd Global/
 python test.py --Scratch_and_Quality_restore \
@@ -116,7 +117,6 @@ python test.py --Scratch_and_Quality_restore \
 python test.py --Quality_restore \
  --test_input [test_image_folder_path] \
  --outputs_dir [output_path]
-
 ```
 
 <img src='imgs/global.png'>
@@ -139,8 +139,6 @@ We use a progressive generator to refine the face regions of old photos. More de
 - [ ] Replace face detection module (dlib) with RetinaFace
 - [ ] Release training code
 - [ ] Develop GUI for easy use
-
-
 
 ## Citation
 
@@ -166,10 +164,7 @@ Title = {Old Photo Restoration via Deep Latent Space Translation},
 Year = {2020},
 Eprint = {arXiv:2009.07047},
 }
-
 ```
-
-
 
 ## License
 
@@ -181,4 +176,6 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 ## Maintenance
 
 This project is currently maintained by Ziyu Wan and is for academic research use only. If you have any questions, feel free to contact raywzy@gmail.com.
+```
+
 ```
