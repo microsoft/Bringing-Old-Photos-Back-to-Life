@@ -44,7 +44,7 @@ bzip2 -d shape_predictor_68_face_landmarks.dat.bz2
 cd ../
 ```
 
-Download the pretrained model from shared one-drive links, put the Old_Photo_Pretrain_Model/Face_Enhancement/checkpoints.zip under /Face_Enhancement, put the Old_Photo_Pretrain_Model/Global/checkpoints.zip under /Global. Then unzip them respectively.
+Download the pretrained model from shared one-drive links, put the `Old_Photo_Pretrain_Model/Face_Enhancement/checkpoints.zip` under `./Face_Enhancement`, put the `Old_Photo_Pretrain_Model/Global/checkpoints.zip` under `./Global`. Then unzip them respectively.
 
 ```
 cd Face_Enhancement/
@@ -84,7 +84,7 @@ python run.py --input_folder [test_image_folder_path] \
               --with_scratch
 ```
 
-Note: Please try to use the absolute path. The final results will be saved in [output_path/final_output]. You could also check the produced results of different steps in [output_path].
+Note: Please try to use the absolute path. The final results will be saved in `./output_path/final_output/`. You could also check the produced results of different steps in `output_path`.
 
 ### 2) Scratch Detection
 
@@ -124,7 +124,7 @@ python test.py --Quality_restore \
 
 ### 4) Face Enhancement
 
-We use a progressive generator to refine the face regions of old photos. More details could be found in our journal submission and [/Face_Enhancement] folder.
+We use a progressive generator to refine the face regions of old photos. More details could be found in our journal submission and `./Face_Enhancement` folder.
 
 <p align="center">
 <img src='imgs/face_pipeline.jpg' width="60%" height="60%"/>
@@ -138,11 +138,11 @@ We use a progressive generator to refine the face regions of old photos. More de
 - [x] Release pretrained model
 - [ ] Replace face detection module (dlib) with RetinaFace
 - [ ] Release training code
-- [ ] Develop GUI for easy use
+- [ ] Collab demo
 
 ## Citation
 
-If you find our work is useful for your research, please consider citing the following papers :)
+If you find our work useful for your research, please consider citing the following papers :)
 
 ```
 @inproceedings{wan2020bringing,
