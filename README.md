@@ -44,7 +44,7 @@ bzip2 -d shape_predictor_68_face_landmarks.dat.bz2
 cd ../
 ```
 
-Download the pretrained model from shared one-drive links, put the `Old_Photo_Pretrain_Model/Face_Enhancement/checkpoints.zip` under `./Face_Enhancement`, put the `Old_Photo_Pretrain_Model/Global/checkpoints.zip` under `./Global`. Then unzip them respectively.
+Download the pretrained model from shared one-drive links, put the file `Face_Enhancement/checkpoints.zip` under `./Face_Enhancement`, put the file `Global/checkpoints.zip` under `./Global`. Then unzip them respectively.
 
 ```
 cd Face_Enhancement/
