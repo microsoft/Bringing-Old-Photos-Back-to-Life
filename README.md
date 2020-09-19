@@ -28,7 +28,7 @@ Clone the Synchronized-BatchNorm-PyTorch repository for
 cd Face_Enhancement/models/networks/
 git clone https://github.com/vacancy/Synchronized-BatchNorm-PyTorch
 cp -rf Synchronized-BatchNorm-PyTorch/sync_batchnorm .
-cd ../../../
+cd ../../
 ```
 
 ```
