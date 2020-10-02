@@ -7,3 +7,4 @@ dill
 tensorboardX
 scipy
 opencv-python
+torchvision
