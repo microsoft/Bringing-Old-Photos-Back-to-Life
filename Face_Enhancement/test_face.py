@@ -36,8 +36,7 @@ for i, data_i in enumerate(dataloader):
     img_path = data_i["path"]
 
     for b in range(generated.shape[0]):
-
-        img_name = img_path[b].split("/")[-1]
+        img_name = os.path.split(img_path[b])[-1]
         save_img_url = os.path.join(single_save_url, img_name)
 
         vutils.save_image((generated[b] + 1) / 2, save_img_url)
