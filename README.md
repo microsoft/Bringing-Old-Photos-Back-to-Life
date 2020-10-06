@@ -21,7 +21,7 @@
 You can now play with our [Colab](https://colab.research.google.com/drive/1NEm6AsybIiC5TwTU_4DqDkQO0nFRB-uA?usp=sharing) and try it on your photos. 
 
 ## Requirement
-The code is tested on Ubuntu with Nvidia GPUs and CUDA installed. Python3 is needed to run the code.
+The code is tested on Ubuntu with Nvidia GPUs and CUDA installed. Python>=3.6 is required to run the code.
 
 ## Installation
 
