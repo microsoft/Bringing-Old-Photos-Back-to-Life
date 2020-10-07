@@ -1,4 +1,5 @@
 torch
+torchvision
 dlib
 scikit-image
 easydict
