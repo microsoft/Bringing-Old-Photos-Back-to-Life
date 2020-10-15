@@ -153,8 +153,8 @@ if __name__ == "__main__":
 
         try:
             generated = model.inference(input, mask)
-        except:
-            print("Skip %s" % (input_name))
+        except Exception as ex:
+            print("Skip %s due to an error:\n%s" % (input_name, str(ex)))
             continue
 
         if input_name.endswith(".jpg"):
