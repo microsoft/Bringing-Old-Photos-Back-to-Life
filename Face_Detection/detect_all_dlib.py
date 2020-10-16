@@ -141,8 +141,8 @@ if __name__ == "__main__":
 
     ### If the origin url is None, then we don't need to reid the origin image
 
-    if not os.path.exists(save_url):
-        os.makedirs(save_url)
+    os.makedirs(url, exist_ok=True)
+    os.makedirs(save_url, exist_ok=True)
 
     face_detector = dlib.get_frontal_face_detector()
     landmark_locator = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
