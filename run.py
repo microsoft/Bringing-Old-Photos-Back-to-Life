@@ -24,6 +24,9 @@ if __name__ == "__main__":
 
     gpu1 = opts.GPU
 
+    # resolve relative paths before changing directory
+    opts.input_folder = os.path.abspath(opts.input_folder)
+    opts.output_folder = os.path.abspath(opts.output_folder)
     if not os.path.exists(opts.output_folder):
         os.makedirs(opts.output_folder)
 
