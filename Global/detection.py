@@ -106,7 +106,11 @@ def main(config):
         print("processing", image_name)
 
         results = []
-        scratch_image = Image.open(os.path.join(config.test_path, image_name)).convert("RGB")
+        scratch_file = os.path.join(config.test_path, image_name)
+        if not os.path.isfile(scratch_file):
+            print("Skipping non-file %s" % image_name)
+            continue
+        scratch_image = Image.open(scratch_file).convert("RGB")
 
         w, h = scratch_image.size
 
