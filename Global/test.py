@@ -108,7 +108,7 @@ if __name__ == "__main__":
     dataset_size = 0
 
     input_loader = os.listdir(opt.test_input)
-    dataset_size = len(os.listdir(opt.test_input))
+    dataset_size = len(input_loader)
     input_loader.sort()
 
     if opt.test_mask != "":
@@ -124,7 +124,11 @@ if __name__ == "__main__":
     for i in range(dataset_size):
 
         input_name = input_loader[i]
-        input = Image.open(os.path.join(opt.test_input, input_name)).convert("RGB")
+        input_file = os.path.join(opt.test_input, input_name)
+        if not os.path.isfile(input_file):
+            print("Skipping non-file %s" % input_name)
+            continue
+        input = Image.open(input_file).convert("RGB")
 
         print("Now you are processing %s" % (input_name))
 
@@ -153,8 +157,8 @@ if __name__ == "__main__":
 
         try:
             generated = model.inference(input, mask)
-        except:
-            print("Skip %s" % (input_name))
+        except Exception as ex:
+            print("Skip %s due to an error:\n%s" % (input_name, str(ex)))
             continue
 
         if input_name.endswith(".jpg"):

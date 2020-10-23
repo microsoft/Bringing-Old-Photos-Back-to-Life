@@ -4,6 +4,15 @@
 import os
 import argparse
 import shutil
+import sys
+from subprocess import call
+
+def run_cmd(command):
+    try:
+        call(command, shell=True)
+    except KeyboardInterrupt:
+        print("Process interrupted")
+        sys.exit(1)
 
 if __name__ == "__main__":
 
@@ -24,6 +33,9 @@ if __name__ == "__main__":
 
     gpu1 = opts.GPU
 
+    # resolve relative paths before changing directory
+    opts.input_folder = os.path.abspath(opts.input_folder)
+    opts.output_folder = os.path.abspath(opts.output_folder)
     if not os.path.exists(opts.output_folder):
         os.makedirs(opts.output_folder)
 
@@ -46,7 +58,7 @@ if __name__ == "__main__":
             + " --gpu_ids "
             + gpu1
         )
-        os.system(stage_1_command)
+        run_cmd(stage_1_command)
     else:
 
         mask_dir = os.path.join(stage_1_output_dir, "masks")
@@ -68,8 +80,8 @@ if __name__ == "__main__":
             + stage_1_output_dir
         )
 
-        os.system(stage_1_command_1)
-        os.system(stage_1_command_2)
+        run_cmd(stage_1_command_1)
+        run_cmd(stage_1_command_2)
 
     ## Solve the case when there is no face in the old photo
     stage_1_results = os.path.join(stage_1_output_dir, "restored_image")
@@ -94,7 +106,7 @@ if __name__ == "__main__":
     stage_2_command = (
         "python detect_all_dlib.py --url " + stage_2_input_dir + " --save_url " + stage_2_output_dir
     )
-    os.system(stage_2_command)
+    run_cmd(stage_2_command)
     print("Finish Stage 2 ...")
     print("\n")
 
@@ -119,7 +131,7 @@ if __name__ == "__main__":
         + stage_3_output_dir
         + " --no_parsing_map"
     )
-    os.system(stage_3_command)
+    run_cmd(stage_3_command)
     print("Finish Stage 3 ...")
     print("\n")
 
@@ -139,7 +151,7 @@ if __name__ == "__main__":
         + " --save_url "
         + stage_4_output_dir
     )
-    os.system(stage_4_command)
+    run_cmd(stage_4_command)
     print("Finish Stage 4 ...")
     print("\n")
 
