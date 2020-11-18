@@ -24,7 +24,9 @@ class ConvEncoder(BaseNetwork):
         self.layer4 = norm_layer(nn.Conv2d(ndf * 4, ndf * 8, kw, stride=2, padding=pw))
         self.layer5 = norm_layer(nn.Conv2d(ndf * 8, ndf * 8, kw, stride=2, padding=pw))
         if opt.crop_size >= 256:
-            self.layer6 = norm_layer(nn.Conv2d(ndf * 8, ndf * 8, kw, stride=2, padding=pw))
+            self.layer6 = norm_layer(
+                nn.Conv2d(ndf * 8, ndf * 8, kw, stride=2, padding=pw)
+            )
 
         self.so = s0 = 4
         self.fc_mu = nn.Linear(ndf * 8 * s0 * s0, 256)

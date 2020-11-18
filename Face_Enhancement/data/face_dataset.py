@@ -61,7 +61,9 @@ class FaceTestDataset(BaseDataset):
 
         params = get_params(self.opt, (-1, -1))
         image_name = self.image_paths[index]
-        image_path = os.path.join(self.opt.dataroot, self.opt.old_face_folder, image_name)
+        image_path = os.path.join(
+            self.opt.dataroot, self.opt.old_face_folder, image_name
+        )
         image = Image.open(image_path)
         image = image.convert("RGB")
 
@@ -69,7 +71,9 @@ class FaceTestDataset(BaseDataset):
         image_tensor = transform_image(image)
 
         img_name = image_name[:-4]
-        transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
+        transform_label = get_transform(
+            self.opt, params, method=Image.NEAREST, normalize=False
+        )
         full_label = []
 
         cnt = 0
@@ -99,4 +103,3 @@ class FaceTestDataset(BaseDataset):
 
     def __len__(self):
         return self.dataset_size
-

@@ -6,9 +6,9 @@ from data.image_folder import make_dataset
 
 
 class CustomDataset(Pix2pixDataset):
-    """ Dataset that loads images from directories
-        Use option --label_dir, --image_dir, --instance_dir to specify the directories.
-        The images in the directories are sorted in alphabetical order and paired in order.
+    """Dataset that loads images from directories
+    Use option --label_dir, --image_dir, --instance_dir to specify the directories.
+    The images in the directories are sorted in alphabetical order and paired in order.
     """
 
     @staticmethod
@@ -23,10 +23,16 @@ class CustomDataset(Pix2pixDataset):
         parser.set_defaults(contain_dontcare_label=False)
 
         parser.add_argument(
-            "--label_dir", type=str, required=True, help="path to the directory that contains label images"
+            "--label_dir",
+            type=str,
+            required=True,
+            help="path to the directory that contains label images",
         )
         parser.add_argument(
-            "--image_dir", type=str, required=True, help="path to the directory that contains photo images"
+            "--image_dir",
+            type=str,
+            required=True,
+            help="path to the directory that contains photo images",
         )
         parser.add_argument(
             "--instance_dir",
@@ -45,7 +51,9 @@ class CustomDataset(Pix2pixDataset):
 
         if len(opt.instance_dir) > 0:
             instance_dir = opt.instance_dir
-            instance_paths = make_dataset(instance_dir, recursive=False, read_cache=True)
+            instance_paths = make_dataset(
+                instance_dir, recursive=False, read_cache=True
+            )
         else:
             instance_paths = []
 

@@ -20,7 +20,9 @@ model.eval()
 visualizer = Visualizer(opt)
 
 
-single_save_url = os.path.join(opt.checkpoints_dir, opt.name, opt.results_dir, "each_img")
+single_save_url = os.path.join(
+    opt.checkpoints_dir, opt.name, opt.results_dir, "each_img"
+)
 
 
 if not os.path.exists(single_save_url):
@@ -40,4 +42,3 @@ for i, data_i in enumerate(dataloader):
         save_img_url = os.path.join(single_save_url, img_name)
 
         vutils.save_image((generated[b] + 1) / 2, save_img_url)
-
