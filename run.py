@@ -7,12 +7,14 @@ import shutil
 import sys
 from subprocess import call
 
+
 def run_cmd(command):
     try:
         call(command, shell=True)
     except KeyboardInterrupt:
         print("Process interrupted")
         sys.exit(1)
+
 
 if __name__ == "__main__":
 
@@ -26,7 +28,10 @@ if __name__ == "__main__":
     )
     parser.add_argument("--GPU", type=str, default="6,7", help="0,1,2")
     parser.add_argument(
-        "--checkpoint_name", type=str, default="Setting_9_epoch_100", help="choose which checkpoint"
+        "--checkpoint_name",
+        type=str,
+        default="Setting_9_epoch_100",
+        help="choose which checkpoint",
     )
     parser.add_argument("--with_scratch", action="store_true")
     opts = parser.parse_args()
@@ -104,7 +109,10 @@ if __name__ == "__main__":
     if not os.path.exists(stage_2_output_dir):
         os.makedirs(stage_2_output_dir)
     stage_2_command = (
-        "python detect_all_dlib.py --url " + stage_2_input_dir + " --save_url " + stage_2_output_dir
+        "python detect_all_dlib.py --url "
+        + stage_2_input_dir
+        + " --save_url "
+        + stage_2_output_dir
     )
     run_cmd(stage_2_command)
     print("Finish Stage 2 ...")
@@ -156,4 +164,3 @@ if __name__ == "__main__":
     print("\n")
 
     print("All the processing is done. Please check the results.")
-
