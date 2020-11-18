@@ -15,7 +15,9 @@ import math
 
 
 class Mapping_Model_with_mask(nn.Module):
-    def __init__(self, nc, mc=64, n_blocks=3, norm="instance", padding_type="reflect", opt=None):
+    def __init__(
+        self, nc, mc=64, n_blocks=3, norm="instance", padding_type="reflect", opt=None
+    ):
         super(Mapping_Model_with_mask, self).__init__()
 
         norm_layer = networks.get_norm_layer(norm_type=norm)
@@ -63,7 +65,11 @@ class Mapping_Model_with_mask(nn.Module):
             model += [nn.Conv2d(ic, oc, 3, 1, 1), norm_layer(oc), activation]
         model += [nn.Conv2d(tmp_nc * 2, tmp_nc, 3, 1, 1)]
         if opt.feat_dim > 0 and opt.feat_dim < 64:
-            model += [norm_layer(tmp_nc), activation, nn.Conv2d(tmp_nc, opt.feat_dim, 1, 1)]
+            model += [
+                norm_layer(tmp_nc),
+                activation,
+                nn.Conv2d(tmp_nc, opt.feat_dim, 1, 1),
+            ]
         # model += [nn.Conv2d(64, 1, 1, 1, 0)]
         self.after_NL = nn.Sequential(*model)
 
@@ -73,4 +79,3 @@ class Mapping_Model_with_mask(nn.Module):
         x3 = self.after_NL(x2)
 
         return x3
-

@@ -180,4 +180,3 @@ if __name__ == "__main__":
         )
 
         origin.save(opt.outputs_dir + "/origin/" + input_name)
-

@@ -51,7 +51,9 @@ def blend_mask(img, mask):
 
     np_img = np.array(img).astype("float")
 
-    return Image.fromarray((np_img * (1 - mask) + mask * 255.0).astype("uint8")).convert("RGB")
+    return Image.fromarray(
+        (np_img * (1 - mask) + mask * 255.0).astype("uint8")
+    ).convert("RGB")
 
 
 def main(config):
@@ -130,7 +132,10 @@ def main(config):
 
         tv.utils.save_image(
             (P >= 0.4).float(),
-            os.path.join(output_dir, image_name[:-4] + ".png",),
+            os.path.join(
+                output_dir,
+                image_name[:-4] + ".png",
+            ),
             nrow=1,
             padding=0,
             normalize=True,
@@ -149,7 +154,12 @@ if __name__ == "__main__":
     parser.add_argument("--GPU", type=int, default=0)
     parser.add_argument("--test_path", type=str, default=".")
     parser.add_argument("--output_dir", type=str, default=".")
-    parser.add_argument("--input_size", type=str, default="scale_256", help="resize_256|full_size|scale_256")
+    parser.add_argument(
+        "--input_size",
+        type=str,
+        default="scale_256",
+        help="resize_256|full_size|scale_256",
+    )
     config = parser.parse_args()
 
     main(config)

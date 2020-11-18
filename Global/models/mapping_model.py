@@ -16,7 +16,9 @@ from .NonLocal_feature_mapping_model import *
 
 
 class Mapping_Model(nn.Module):
-    def __init__(self, nc, mc=64, n_blocks=3, norm="instance", padding_type="reflect", opt=None):
+    def __init__(
+        self, nc, mc=64, n_blocks=3, norm="instance", padding_type="reflect", opt=None
+    ):
         super(Mapping_Model, self).__init__()
 
         norm_layer = networks.get_norm_layer(norm_type=norm)
@@ -47,7 +49,11 @@ class Mapping_Model(nn.Module):
             model += [nn.Conv2d(ic, oc, 3, 1, 1), norm_layer(oc), activation]
         model += [nn.Conv2d(tmp_nc * 2, tmp_nc, 3, 1, 1)]
         if opt.feat_dim > 0 and opt.feat_dim < 64:
-            model += [norm_layer(tmp_nc), activation, nn.Conv2d(tmp_nc, opt.feat_dim, 1, 1)]
+            model += [
+                norm_layer(tmp_nc),
+                activation,
+                nn.Conv2d(tmp_nc, opt.feat_dim, 1, 1),
+            ]
         # model += [nn.Conv2d(64, 1, 1, 1, 0)]
         self.model = nn.Sequential(*model)
 
@@ -59,14 +65,44 @@ class Pix2PixHDModel_Mapping(BaseModel):
     def name(self):
         return "Pix2PixHDModel_Mapping"
 
-    def init_loss_filter(self, use_gan_feat_loss, use_vgg_loss, use_smooth_l1, stage_1_feat_l2):
-        flags = (True, True, use_gan_feat_loss, use_vgg_loss, True, True, use_smooth_l1, stage_1_feat_l2)
+    def init_loss_filter(
+        self, use_gan_feat_loss, use_vgg_loss, use_smooth_l1, stage_1_feat_l2
+    ):
+        flags = (
+            True,
+            True,
+            use_gan_feat_loss,
+            use_vgg_loss,
+            True,
+            True,
+            use_smooth_l1,
+            stage_1_feat_l2,
+        )
 
-        def loss_filter(g_feat_l2, g_gan, g_gan_feat, g_vgg, d_real, d_fake, smooth_l1, stage_1_feat_l2):
+        def loss_filter(
+            g_feat_l2,
+            g_gan,
+            g_gan_feat,
+            g_vgg,
+            d_real,
+            d_fake,
+            smooth_l1,
+            stage_1_feat_l2,
+        ):
             return [
                 l
                 for (l, f) in zip(
-                    (g_feat_l2, g_gan, g_gan_feat, g_vgg, d_real, d_fake, smooth_l1, stage_1_feat_l2), flags
+                    (
+                        g_feat_l2,
+                        g_gan,
+                        g_gan_feat,
+                        g_vgg,
+                        d_real,
+                        d_fake,
+                        smooth_l1,
+                        stage_1_feat_l2,
+                    ),
+                    flags,
                 )
                 if f
             ]
@@ -120,12 +156,18 @@ class Pix2PixHDModel_Mapping(BaseModel):
         self.mapping_net.apply(networks.weights_init)
 
         if opt.load_pretrain != "":
-            self.load_network(self.mapping_net, "mapping_net", opt.which_epoch, opt.load_pretrain)
+            self.load_network(
+                self.mapping_net, "mapping_net", opt.which_epoch, opt.load_pretrain
+            )
 
         if not opt.no_load_VAE:
 
-            self.load_network(self.netG_A, "G", opt.use_vae_which_epoch, opt.load_pretrainA)
-            self.load_network(self.netG_B, "G", opt.use_vae_which_epoch, opt.load_pretrainB)
+            self.load_network(
+                self.netG_A, "G", opt.use_vae_which_epoch, opt.load_pretrainA
+            )
+            self.load_network(
+                self.netG_B, "G", opt.use_vae_which_epoch, opt.load_pretrainB
+            )
             for param in self.netG_A.parameters():
                 param.requires_grad = False
             for param in self.netG_B.parameters():
@@ -156,4 +198,3 @@ class Pix2PixHDModel_Mapping(BaseModel):
 class InferenceModel(Pix2PixHDModel_Mapping):
     def forward(self, label, inst):
         return self.inference(label, inst)
-
