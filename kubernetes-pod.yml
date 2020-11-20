@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: photo-back2life
+spec:
+  containers:
+    - name: photos-back2life
+      image: <YOUR IMAGE>
+      volumeMounts:
+      - mountPath: /in
+        name: in-folder
+      - mountPath: /out
+        name: out-folder
+      command: 
+        - python
+        - /app/run.py
+      args:
+        - --input_folder
+        - /in
+        - --output_folder
+        - /out
+        - --GPU 
+        - '0'
+        - --with_scratch
+      resources:
+        limits:
+          memory: 4Gi
+          cpu: 0
+          nvidia.com/gpu: 1      
+  volumes:
+  - name: in-folder
+    hostPath:
+      path: /srv/in
+      type: Directory   
+  - name: out-folder
+    hostPath:
+      path: /srv/out
+      type: Directory
