@@ -340,9 +340,9 @@ class BaseOptions:
         str_ids = self.opt.gpu_ids.split(",")
         self.opt.gpu_ids = []
         for str_id in str_ids:
-            id = int(str_id)
-            if id >= 0:
-                self.opt.gpu_ids.append(id)
+            int_id = int(str_id)
+            if int_id >= 0:
+                self.opt.gpu_ids.append(int_id)
 
         # set gpu ids
         if len(self.opt.gpu_ids) > 0:

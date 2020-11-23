@@ -277,13 +277,13 @@ class BaseOptions:
         str_ids = opt.gpu_ids.split(",")
         opt.gpu_ids = []
         for str_id in str_ids:
-            id = int(str_id)
-            if id >= 0:
-                opt.gpu_ids.append(id)
+            int_id = int(str_id)
+            if int_id >= 0:
+                opt.gpu_ids.append(int_id)
 
-        print("The main GPU is ")
-        print(opt.gpu_ids[0])
         if len(opt.gpu_ids) > 0:
+            print("The main GPU is ")
+            print(opt.gpu_ids[0])
             torch.cuda.set_device(opt.gpu_ids[0])
 
         assert (

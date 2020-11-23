@@ -102,12 +102,13 @@ class Pix2PixModel(torch.nn.Module):
         # move to GPU and change data types
         # data['label'] = data['label'].long()
 
-        if self.opt.isTrain is False:
-            data["label"] = data["label"].cuda()
-            data["image"] = data["image"].cuda()
+        if not self.opt.isTrain:
+            if self.use_gpu():
+                data["label"] = data["label"].cuda()
+                data["image"] = data["image"].cuda()
             return data["label"], data["image"], data["image"]
-        ## While testing, the input image is the degraded face
 
+        ## While testing, the input image is the degraded face
         if self.use_gpu():
             data["label"] = data["label"].cuda()
             data["degraded_image"] = data["degraded_image"].cuda()
