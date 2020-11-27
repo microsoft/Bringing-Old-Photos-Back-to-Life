@@ -70,6 +70,8 @@ if __name__ == "__main__":
             + " --output_dir "
             + mask_dir
             + " --input_size full_size"
+            + " --GPU "
+            + gpu1
         )
         stage_1_command_2 = (
             "python test.py --Scratch_and_Quality_restore --test_input "
@@ -78,6 +80,8 @@ if __name__ == "__main__":
             + new_mask
             + " --outputs_dir "
             + stage_1_output_dir
+            + " --gpu_ids "
+            + gpu1
         )
 
         run_cmd(stage_1_command_1)

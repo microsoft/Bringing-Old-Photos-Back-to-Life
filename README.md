@@ -71,6 +71,8 @@ pip install -r requirements.txt
 
 ## How to use?
 
+**Note**:GPU can be set 0 or 0,1,2 or 0,2; use -1 for CPU
+
 ### 1) Full Pipeline
 
 You could easily restore the old photos with one simple command after installation and downloading the pretrained model.
