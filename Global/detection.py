@@ -76,8 +76,8 @@ def main(config):
     checkpoint = torch.load(checkpoint_path, map_location="cpu")
     model.load_state_dict(checkpoint["model_state"])
     print("model weights loaded")
-    if config.GPU > 0:
-        model.to(config.GPU)
+
+    model.to(config.GPU)
     model.eval()
 
     ## dataloader and transformation
@@ -122,8 +122,7 @@ def main(config):
         scratch_image = tv.transforms.Normalize([0.5], [0.5])(scratch_image)
 
         scratch_image = torch.unsqueeze(scratch_image, 0)
-        if config.GPU > 0:
-            scratch_image = scratch_image.to(config.GPU)
+        scratch_image = scratch_image.to(config.GPU)
 
         P = torch.sigmoid(model(scratch_image))
 
