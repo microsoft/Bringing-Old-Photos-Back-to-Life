@@ -179,6 +179,17 @@ Eprint = {arXiv:2009.07047},
 }
 ```
 
+If you are also interested in the legacy photo/video colorization, please refer to our another work.
+```
+@inproceedings{zhang2019deep,
+  title={Deep exemplar-based video colorization},
+  author={Zhang, Bo and He, Mingming and Liao, Jing and Sander, Pedro V and Yuan, Lu and Bermak, Amine and Chen, Dong},
+  booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
+  pages={8052--8061},
+  year={2019}
+}
+```
+
 
 ## Maintenance
 
