@@ -1,4 +1,3 @@
-
 import os
 import argparse
 import shutil
@@ -24,8 +23,6 @@ import Global.util.util as util
 import torchvision.utils as vutils
 import torchvision.transforms as transforms
 
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-
 import skimage.io as io
 
 import matplotlib.pyplot as plt
@@ -43,11 +40,62 @@ from Face_Enhancement.options.test_options import TestOptions
 from Face_Enhancement.models.pix2pix_model import Pix2PixModel
 from Face_Enhancement.util.visualizer import Visualizer
 
+import platform
+import argparse
+import time
+
+from openvino.inference_engine import IECore
+import cv2 as cv
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+
+def new_face_detector(image):
+    plugin = IECore()
+
+    device = 'CPU'
+
+    FACE_DETECT_XML = "models/face-detection-adas-0001.xml"
+    FACE_DETECT_BIN = "models/face-detection-adas-0001.bin"
+    FACE_DETECT_INPUT_KEYS = 'data'
+    FACE_DETECT_OUTPUT_KEYS = 'detection_out'
+
+    net_face_detect = plugin.read_network(FACE_DETECT_XML, FACE_DETECT_BIN)
+    # Load the Network using Plugin Device
+    exec_face_detect = plugin.load_network(network=net_face_detect, device_name=device)
+
+    #  Obtain image_count, channels, height and width
+    n_face_detect, c_face_detect, h_face_detect, w_face_detect = net_face_detect.input_info[
+        FACE_DETECT_INPUT_KEYS].input_data.shape
+
+    blob = cv.resize(image, (w_face_detect, h_face_detect))  # Resize width & height
+    blob = blob.transpose((2, 0, 1))  # Change data layout from HWC to CHW
+    blob = blob.reshape((n_face_detect, c_face_detect, h_face_detect, w_face_detect))
+
+    req_handle = exec_face_detect.start_async(
+        request_id=0, inputs={FACE_DETECT_INPUT_KEYS: blob})
+
+    res = req_handle.output_blobs[FACE_DETECT_OUTPUT_KEYS].buffer
+
+    answer = []
+
+    for detection in res[0][0]:  # TODO check if res[0][0] sorted by confidence
+        confidence = float(detection[2])
+        # Obtain Bounding box coordinate, +-10 just for padding
+        xmin = int(detection[3] * image.shape[1] - 10)
+        ymin = int(detection[4] * image.shape[0] - 10)
+        xmax = int(detection[5] * image.shape[1] + 10)
+        ymax = int(detection[6] * image.shape[0] + 10)
+        face = [(xmin, ymin), (xmax, ymax)]
+        if confidence > 0.9:
+            answer.append(face)
+    return answer
+
 
 def _standard_face_pts():
     pts = (
-        np.array([196.0, 226.0, 316.0, 226.0, 256.0, 286.0, 220.0, 360.4, 292.0, 360.4], np.float32) / 256.0
-        - 1.0
+            np.array([196.0, 226.0, 316.0, 226.0, 256.0, 286.0, 220.0, 360.4, 292.0, 360.4], np.float32) / 256.0
+            - 1.0
     )
 
     return np.reshape(pts, (5, 2))
@@ -64,11 +112,10 @@ def get_landmark(face_landmarks, id):
     x = part.x
     y = part.y
 
-    return (x, y)
+    return x, y
 
 
 def search(face_landmarks):
-
     x1, y1 = get_landmark(face_landmarks, 36)
     x2, y2 = get_landmark(face_landmarks, 39)
     x3, y3 = get_landmark(face_landmarks, 42)
@@ -95,27 +142,6 @@ def search(face_landmarks):
     )
 
     return results
-
-
-def compute_transformation_matrix(img, landmark, normalize, target_face_scale=1.0):
-
-    std_pts = _standard_face_pts()  # [-1,1]
-    target_pts = (std_pts * target_face_scale + 1) / 2 * 256.0
-
-    # print(target_pts)
-
-    h, w, c = img.shape
-    if normalize == True:
-        landmark[:, 0] = landmark[:, 0] / h * 2 - 1.0
-        landmark[:, 1] = landmark[:, 1] / w * 2 - 1.0
-
-    # print(landmark)
-
-    affine = SimilarityTransform()
-
-    affine.estimate(target_pts, landmark)
-
-    return affine.params
 
 
 def show_detection(image, box, landmark):
@@ -146,7 +172,8 @@ def affine2theta(affine, input_w, input_h, target_w, target_h):
     theta[1, 2] = (2 * param[1, 2] + param[1, 0] * input_h + param[1, 1] * input_w) / target_w - 1
     return theta
 
-def data_transforms(img, full_size, method=Image.BICUBIC):
+
+def data_transforms_global(img, full_size, method=Image.BICUBIC):
     if full_size == "full_size":
         ow, oh = img.size
         h = int(round(oh / 16) * 16)
@@ -177,14 +204,12 @@ def data_transforms(img, full_size, method=Image.BICUBIC):
 
 
 def blend_mask(img, mask):
-
     np_img = np.array(img).astype("float")
 
     return Image.fromarray((np_img * (1 - mask) + mask * 255.0).astype("uint8")).convert("RGB")
 
 
 def data_transforms(img, method=Image.BILINEAR, scale=False):
-
     ow, oh = img.size
     pw, ph = ow, oh
     if scale == True:
@@ -213,7 +238,6 @@ def data_transforms_rgb_old(img):
 
 
 def irregular_hole_synthesize(img, mask):
-
     img_np = np.array(img).astype("uint8")
     mask_np = np.array(mask).astype("uint8")
     mask_np = mask_np / 255
@@ -223,9 +247,7 @@ def irregular_hole_synthesize(img, mask):
 
     return hole_img
 
-    #stage 4
-
-
+    # stage 4
 
 
 def calculate_cdf(histogram):
@@ -314,23 +336,7 @@ def match_histograms(src_image, ref_image):
     return image_after_matching
 
 
-def _standard_face_pts():
-    pts = (
-        np.array([196.0, 226.0, 316.0, 226.0, 256.0, 286.0, 220.0, 360.4, 292.0, 360.4], np.float32) / 256.0
-        - 1.0
-    )
-
-    return np.reshape(pts, (5, 2))
-
-
-def _origin_face_pts():
-    pts = np.array([196.0, 226.0, 316.0, 226.0, 256.0, 286.0, 220.0, 360.4, 292.0, 360.4], np.float32)
-
-    return np.reshape(pts, (5, 2))
-
-
 def compute_transformation_matrix(img, landmark, normalize, target_face_scale=1.0):
-
     std_pts = _standard_face_pts()  # [-1,1]
     target_pts = (std_pts * target_face_scale + 1) / 2 * 256.0
 
@@ -351,7 +357,6 @@ def compute_transformation_matrix(img, landmark, normalize, target_face_scale=1.
 
 
 def compute_inverse_transformation_matrix(img, landmark, normalize, target_face_scale=1.0):
-
     std_pts = _standard_face_pts()  # [-1,1]
     target_pts = (std_pts * target_face_scale + 1) / 2 * 256.0
 
@@ -371,37 +376,7 @@ def compute_inverse_transformation_matrix(img, landmark, normalize, target_face_
     return affine
 
 
-def show_detection(image, box, landmark):
-    plt.imshow(image)
-    print(box[2] - box[0])
-    plt.gca().add_patch(
-        Rectangle(
-            (box[1], box[0]), box[2] - box[0], box[3] - box[1], linewidth=1, edgecolor="r", facecolor="none"
-        )
-    )
-    plt.scatter(landmark[0][0], landmark[0][1])
-    plt.scatter(landmark[1][0], landmark[1][1])
-    plt.scatter(landmark[2][0], landmark[2][1])
-    plt.scatter(landmark[3][0], landmark[3][1])
-    plt.scatter(landmark[4][0], landmark[4][1])
-    plt.show()
-
-
-def affine2theta(affine, input_w, input_h, target_w, target_h):
-    # param = np.linalg.inv(affine)
-    param = affine
-    theta = np.zeros([2, 3])
-    theta[0, 0] = param[0, 0] * input_h / target_h
-    theta[0, 1] = param[0, 1] * input_w / target_h
-    theta[0, 2] = (2 * param[0, 2] + param[0, 0] * input_h + param[0, 1] * input_w) / target_h - 1
-    theta[1, 0] = param[1, 0] * input_h / target_w
-    theta[1, 1] = param[1, 1] * input_w / target_w
-    theta[1, 2] = (2 * param[1, 2] + param[1, 0] * input_h + param[1, 1] * input_w) / target_w - 1
-    return theta
-
-
 def blur_blending(im1, im2, mask):
-
     mask *= 255.0
 
     kernel = np.ones((10, 10), np.uint8)
@@ -420,7 +395,6 @@ def blur_blending(im1, im2, mask):
 
 
 def blur_blending_cv2(im1, im2, mask):
-
     mask *= 255.0
 
     kernel = np.ones((9, 9), np.uint8)
@@ -437,12 +411,7 @@ def blur_blending_cv2(im1, im2, mask):
     return im
 
 
-# def Poisson_blending(im1,im2,mask):
-
-
-#     Image.composite(
 def Poisson_blending(im1, im2, mask):
-
     # mask=1-mask
     mask *= 255
     kernel = np.ones((10, 10), np.uint8)
@@ -462,7 +431,6 @@ def Poisson_blending(im1, im2, mask):
 
 
 def Poisson_B(im1, im2, mask, center):
-
     mask *= 255
 
     result = cv2.seamlessClone(
@@ -473,7 +441,6 @@ def Poisson_B(im1, im2, mask, center):
 
 
 def seamless_clone(old_face, new_face, raw_mask):
-
     height, width, _ = old_face.shape
     height = height // 2
     width = width // 2
@@ -511,49 +478,13 @@ def seamless_clone(old_face, new_face, raw_mask):
     return blended.astype("float32") / 255.0
 
 
-def get_landmark(face_landmarks, id):
-    part = face_landmarks.part(id)
-    x = part.x
-    y = part.y
-
-    return (x, y)
-
-
-def search(face_landmarks):
-
-    x1, y1 = get_landmark(face_landmarks, 36)
-    x2, y2 = get_landmark(face_landmarks, 39)
-    x3, y3 = get_landmark(face_landmarks, 42)
-    x4, y4 = get_landmark(face_landmarks, 45)
-
-    x_nose, y_nose = get_landmark(face_landmarks, 30)
-
-    x_left_mouth, y_left_mouth = get_landmark(face_landmarks, 48)
-    x_right_mouth, y_right_mouth = get_landmark(face_landmarks, 54)
-
-    x_left_eye = int((x1 + x2) / 2)
-    y_left_eye = int((y1 + y2) / 2)
-    x_right_eye = int((x3 + x4) / 2)
-    y_right_eye = int((y3 + y4) / 2)
-
-    results = np.array(
-        [
-            [x_left_eye, y_left_eye],
-            [x_right_eye, y_right_eye],
-            [x_nose, y_nose],
-            [x_left_mouth, y_left_mouth],
-            [x_right_mouth, y_right_mouth],
-        ]
-    )
-
-    return results
-
 def run_cmd(command):
     try:
         call(command, shell=True)
     except KeyboardInterrupt:
         print("Process interrupted")
         sys.exit(1)
+
 
 def parameter_set(opt):
     ## Default parameters
@@ -615,7 +546,7 @@ if __name__ == "__main__":
 
     ## Stage 1: Overall Quality Improve
     print("Running Stage 1: Overall restoration")
-    #os.chdir("./Global")
+    # os.chdir("./Global")
     stage_1_input_dir = opts.input_folder
     stage_1_output_dir = os.path.join(opts.output_folder, "stage_1_restore_output")
     if not os.path.exists(stage_1_output_dir):
@@ -623,12 +554,12 @@ if __name__ == "__main__":
 
     if not opts.with_scratch:
         stage_1_command = (
-            "python test.py --test_mode Full --Quality_restore --test_input "
-            + stage_1_input_dir
-            + " --outputs_dir "
-            + stage_1_output_dir
-            + " --gpu_ids "
-            + gpu1
+                "python test.py --test_mode Full --Quality_restore --test_input "
+                + stage_1_input_dir
+                + " --outputs_dir "
+                + stage_1_output_dir
+                + " --gpu_ids "
+                + gpu1
         )
         run_cmd(stage_1_command)
     else:
@@ -637,29 +568,28 @@ if __name__ == "__main__":
         new_input = os.path.join(mask_dir, "input")
         new_mask = os.path.join(mask_dir, "mask")
         stage_1_command_1 = (
-            "python detection.py --test_path "
-            + stage_1_input_dir
-            + " --output_dir "
-            + mask_dir
-            + " --input_size full_size"
-            + " --GPU "
-            + gpu1
+                "python detection.py --test_path "
+                + stage_1_input_dir
+                + " --output_dir "
+                + mask_dir
+                + " --input_size full_size"
+                + " --GPU "
+                + gpu1
         )
         stage_1_command_2 = (
-            "python test.py --Scratch_and_Quality_restore --test_input "
-            + new_input
-            + " --test_mask "
-            + new_mask
-            + " --outputs_dir "
-            + stage_1_output_dir
-            + " --gpu_ids "
-            + gpu1
+                "python test.py --Scratch_and_Quality_restore --test_input "
+                + new_input
+                + " --test_mask "
+                + new_mask
+                + " --outputs_dir "
+                + stage_1_output_dir
+                + " --gpu_ids "
+                + gpu1
         )
 
-        #run_cmd(stage_1_command_1)
-        #run_cmd(stage_1_command_2)
-        
-        
+        # run_cmd(stage_1_command_1)
+        # run_cmd(stage_1_command_2)
+
         print("initializing the dataloader")
         parser = argparse.ArgumentParser()
 
@@ -668,7 +598,7 @@ if __name__ == "__main__":
         parser.output_dir = mask_dir
         parser.input_size = "scale_256"
         config = parser
-        
+
         model = networks.UNet(
             in_channels=1,
             out_channels=1,
@@ -726,7 +656,7 @@ if __name__ == "__main__":
 
             w, h = scratch_image.size
 
-            transformed_image_PIL = data_transforms(scratch_image, config.input_size)
+            transformed_image_PIL = data_transforms_global(scratch_image, config.input_size)
 
             scratch_image = transformed_image_PIL.convert("L")
             scratch_image = tv.transforms.ToTensor()(scratch_image)
@@ -742,7 +672,7 @@ if __name__ == "__main__":
 
             tv.utils.save_image(
                 (P >= 0.4).float(),
-                os.path.join(output_dir, image_name[:-4] + ".png",),
+                os.path.join(output_dir, image_name[:-4] + ".png", ),
                 nrow=1,
                 padding=0,
                 normalize=True,
@@ -752,19 +682,19 @@ if __name__ == "__main__":
             # RGB_mask=np.stack([single_mask,single_mask,single_mask],axis=2)
             # blend_output=blend_mask(transformed_image_PIL,RGB_mask)
             # blend_output.save(os.path.join(blend_output_dir,image_name[:-4]+'.png'))
-        
+
         stage_1_command_2 = (
-            "python test.py --Scratch_and_Quality_restore --test_input "
-            + new_input
-            + " --test_mask "
-            + new_mask
-            + " --outputs_dir "
-            + stage_1_output_dir
-            + " --gpu_ids "
-            + gpu1
+                "python test.py --Scratch_and_Quality_restore --test_input "
+                + new_input
+                + " --test_mask "
+                + new_mask
+                + " --outputs_dir "
+                + stage_1_output_dir
+                + " --gpu_ids "
+                + gpu1
         )
-        #run_cmd(stage_1_command_2)
-        
+        # run_cmd(stage_1_command_2)
+
         opt = argparse.ArgumentParser()
         opt.Scratch_and_Quality_restore = True
         opt.test_input = new_input
@@ -878,7 +808,6 @@ if __name__ == "__main__":
             )
 
             origin.save(opt.outputs_dir + "/origin/" + input_name)
-            
 
     ## Solve the case when there is no face in the old photo
     stage_1_results = os.path.join(stage_1_output_dir, "restored_image")
@@ -895,16 +824,16 @@ if __name__ == "__main__":
     ## Stage 2: Face Detection
 
     print("Running Stage 2: Face Detection")
-    #os.chdir(".././Face_Detection")
+    # os.chdir(".././Face_Detection")
     stage_2_input_dir = os.path.join(stage_1_output_dir, "restored_image")
     stage_2_output_dir = os.path.join(opts.output_folder, "stage_2_detection_output")
     if not os.path.exists(stage_2_output_dir):
         os.makedirs(stage_2_output_dir)
     stage_2_command = (
-        "python detect_all_dlib.py --url " + stage_2_input_dir + " --save_url " + stage_2_output_dir
+            "python detect_all_dlib.py --url " + stage_2_input_dir + " --save_url " + stage_2_output_dir
     )
-    #run_cmd(stage_2_command)
-    
+    # run_cmd(stage_2_command)
+
     url = stage_2_input_dir
     save_url = stage_2_output_dir
 
@@ -913,8 +842,8 @@ if __name__ == "__main__":
     os.makedirs(url, exist_ok=True)
     os.makedirs(save_url, exist_ok=True)
 
-    face_detector = dlib.get_frontal_face_detector()    #TODO
-    landmark_locator = dlib.shape_predictor("Face_Detection/shape_predictor_68_face_landmarks.dat") 
+    face_detector = dlib.get_frontal_face_detector()
+    landmark_locator = dlib.shape_predictor("Face_Detection/shape_predictor_68_face_landmarks.dat")
 
     count = 0
 
@@ -926,7 +855,7 @@ if __name__ == "__main__":
         image = np.array(pil_img)
 
         start = time.time()
-        faces = face_detector(image)#TODO
+        faces = face_detector(image)
         done = time.time()
 
         if len(faces) == 0:
@@ -938,10 +867,10 @@ if __name__ == "__main__":
         if len(faces) > 0:
             for face_id in range(len(faces)):
                 current_face = faces[face_id]
-                face_landmarks = landmark_locator(image, current_face) #TODO
+                face_landmarks = landmark_locator(image, current_face)
                 current_fl = search(face_landmarks)
 
-                affine = compute_transformation_matrix(image, current_fl, False, target_face_scale=1.3)
+                affine = compute_transformation_matrix(image, current_fl, False, target_face_scale=1.3).params
                 aligned_face = warp(image, affine, output_shape=(256, 256, 3))
                 img_name = x[:-4] + "_" + str(face_id + 1)
                 io.imsave(os.path.join(save_url, img_name + ".png"), img_as_ubyte(aligned_face))
@@ -955,27 +884,27 @@ if __name__ == "__main__":
 
     ## Stage 3: Face Restore
     print("Running Stage 3: Face Enhancement")
-    #os.chdir(".././Face_Enhancement")
+    # os.chdir(".././Face_Enhancement")
     stage_3_input_mask = "./"
     stage_3_input_face = stage_2_output_dir
     stage_3_output_dir = os.path.join(opts.output_folder, "stage_3_face_output")
     if not os.path.exists(stage_3_output_dir):
         os.makedirs(stage_3_output_dir)
     stage_3_command = (
-        "python test_face.py --old_face_folder "
-        + stage_3_input_face
-        + " --old_face_label_folder "
-        + stage_3_input_mask
-        + " --tensorboard_log --name "
-        + opts.checkpoint_name
-        + " --gpu_ids "
-        + gpu1
-        + " --load_size 256 --label_nc 18 --no_instance --preprocess_mode resize --batchSize 4 --results_dir "
-        + stage_3_output_dir
-        + " --no_parsing_map"
+            "python test_face.py --old_face_folder "
+            + stage_3_input_face
+            + " --old_face_label_folder "
+            + stage_3_input_mask
+            + " --tensorboard_log --name "
+            + opts.checkpoint_name
+            + " --gpu_ids "
+            + gpu1
+            + " --load_size 256 --label_nc 18 --no_instance --preprocess_mode resize --batchSize 4 --results_dir "
+            + stage_3_output_dir
+            + " --no_parsing_map"
     )
-    #run_cmd(stage_3_command)
-    
+    # run_cmd(stage_3_command)
+
     opt = TestOptions()
     opt.initialize(argparse.ArgumentParser())
     opt.old_face_folder = stage_3_input_face
@@ -1006,7 +935,7 @@ if __name__ == "__main__":
     opt.contain_dontcare_label = False
     opt.semantic_nc = (
             opt.label_nc + (1 if opt.contain_dontcare_label else 0) + (0 if opt.no_instance else 1)
-        )
+    )
     opt.init_type = 'normal'
     opt.init_variance = 0.02
     opt.which_epoch = 'latest'
@@ -1020,13 +949,10 @@ if __name__ == "__main__":
 
     visualizer = Visualizer(opt)
 
-
     single_save_url = os.path.join(opt.checkpoints_dir, opt.name, opt.results_dir, "each_img")
-
 
     if not os.path.exists(single_save_url):
         os.makedirs(single_save_url)
-
 
     for i, data_i in enumerate(dataloader):
         if i * opt.batchSize >= opt.how_many:
@@ -1041,7 +967,7 @@ if __name__ == "__main__":
             save_img_url = os.path.join(single_save_url, img_name)
 
             vutils.save_image((generated[b] + 1) / 2, save_img_url)
-    
+
     print("Finish Stage 3 ...")
     print("\n")
 
@@ -1053,14 +979,14 @@ if __name__ == "__main__":
     if not os.path.exists(stage_4_output_dir):
         os.makedirs(stage_4_output_dir)
     stage_4_command = (
-        "python align_warp_back_multiple_dlib.py --origin_url "
-        + stage_4_input_image_dir
-        + " --replace_url "
-        + stage_4_input_face_dir
-        + " --save_url "
-        + stage_4_output_dir
+            "python align_warp_back_multiple_dlib.py --origin_url "
+            + stage_4_input_image_dir
+            + " --replace_url "
+            + stage_4_input_face_dir
+            + " --save_url "
+            + stage_4_output_dir
     )
-    #run_cmd(stage_4_command)
+    # run_cmd(stage_4_command)
 
     origin_url = stage_4_input_image_dir
     replace_url = stage_4_input_face_dir
@@ -1082,7 +1008,7 @@ if __name__ == "__main__":
         image = np.array(pil_img)
 
         start = time.time()
-        faces = face_detector(image) #TODO
+        faces = new_face_detector(image)
         done = time.time()
 
         if len(faces) == 0:
@@ -1093,7 +1019,7 @@ if __name__ == "__main__":
         for face_id in range(len(faces)):
 
             current_face = faces[face_id]
-            face_landmarks = landmark_locator(image, current_face) #TODO
+            face_landmarks = landmark_locator(image, current_face)
             current_fl = search(face_landmarks)
 
             forward_mask = np.ones_like(image).astype("uint8")
@@ -1106,7 +1032,6 @@ if __name__ == "__main__":
             affine_inverse = affine.inverse
             cur_face = aligned_face
             if replace_url != "":
-
                 face_name = x[:-4] + "_" + str(face_id + 1) + ".png"
                 cur_url = os.path.join(replace_url, face_name)
                 restored_face = Image.open(cur_url).convert("RGB")
@@ -1148,4 +1073,3 @@ if __name__ == "__main__":
     print("\n")
 
     print("All the processing is done. Please check the results.")
-
