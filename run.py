@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     if not opts.with_scratch:
         stage_1_command = (
-            "python test.py --test_mode Full --Quality_restore --test_input "
+            "python3 test.py --test_mode Full --Quality_restore --test_input "
             + stage_1_input_dir
             + " --outputs_dir "
             + stage_1_output_dir
@@ -65,7 +65,7 @@ if __name__ == "__main__":
         new_input = os.path.join(mask_dir, "input")
         new_mask = os.path.join(mask_dir, "mask")
         stage_1_command_1 = (
-            "python detection.py --test_path "
+            "python3 detection.py --test_path "
             + stage_1_input_dir
             + " --output_dir "
             + mask_dir
@@ -74,7 +74,7 @@ if __name__ == "__main__":
             + gpu1
         )
         stage_1_command_2 = (
-            "python test.py --Scratch_and_Quality_restore --test_input "
+            "python3 test.py --Scratch_and_Quality_restore --test_input "
             + new_input
             + " --test_mask "
             + new_mask
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     if not os.path.exists(stage_2_output_dir):
         os.makedirs(stage_2_output_dir)
     stage_2_command = (
-        "python detect_all_dlib.py --url " + stage_2_input_dir + " --save_url " + stage_2_output_dir
+        "3 detect_all_dlib.py --url " + stage_2_input_dir + " --save_url " + stage_2_output_dir
     )
     run_cmd(stage_2_command)
     print("Finish Stage 2 ...")
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     if not os.path.exists(stage_3_output_dir):
         os.makedirs(stage_3_output_dir)
     stage_3_command = (
-        "python test_face.py --old_face_folder "
+        "python3 test_face.py --old_face_folder "
         + stage_3_input_face
         + " --old_face_label_folder "
         + stage_3_input_mask
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     if not os.path.exists(stage_4_output_dir):
         os.makedirs(stage_4_output_dir)
     stage_4_command = (
-        "python align_warp_back_multiple_dlib.py --origin_url "
+        "python3 align_warp_back_multiple_dlib.py --origin_url "
         + stage_4_input_image_dir
         + " --replace_url "
         + stage_4_input_face_dir

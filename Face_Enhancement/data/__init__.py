@@ -3,8 +3,8 @@
 
 import importlib
 import torch.utils.data
-from data.base_dataset import BaseDataset
-from data.face_dataset import FaceTestDataset
+from Face_Enhancement.data.base_dataset import BaseDataset
+from Face_Enhancement.data.face_dataset import FaceTestDataset
 
 
 def create_dataloader(opt):
