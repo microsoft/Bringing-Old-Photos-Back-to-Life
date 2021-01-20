@@ -59,9 +59,9 @@ def new_face_detector(image):
     FACE_DETECT_BIN = "models/face-detection-adas-0001.bin"
     FACE_DETECT_INPUT_KEYS = 'data'
     FACE_DETECT_OUTPUT_KEYS = 'detection_out'
-
     net_face_detect = plugin.read_network(FACE_DETECT_XML, FACE_DETECT_BIN)
     # Load the Network using Plugin Device
+
     exec_face_detect = plugin.load_network(network=net_face_detect, device_name=device)
 
     #  Obtain image_count, channels, height and width
@@ -77,7 +77,8 @@ def new_face_detector(image):
 
     res = req_handle.output_blobs[FACE_DETECT_OUTPUT_KEYS].buffer
 
-    answer = []
+    answer = dlib.rectangles()
+
 
     for detection in res[0][0]:  # TODO check if res[0][0] sorted by confidence
         confidence = float(detection[2])
@@ -86,7 +87,7 @@ def new_face_detector(image):
         ymin = int(detection[4] * image.shape[0] - 10)
         xmax = int(detection[5] * image.shape[1] + 10)
         ymax = int(detection[6] * image.shape[0] + 10)
-        face = [(xmin, ymin), (xmax, ymax)]
+        face = dlib.rectangle(left=xmin, bottom=ymax, right=xmax, top=ymin)
         if confidence > 0.9:
             answer.append(face)
     return answer
@@ -855,7 +856,7 @@ if __name__ == "__main__":
         image = np.array(pil_img)
 
         start = time.time()
-        faces = face_detector(image)
+        faces = new_face_detector(image)
         done = time.time()
 
         if len(faces) == 0:
