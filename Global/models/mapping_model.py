@@ -133,7 +133,11 @@ class Pix2PixHDModel_Mapping(BaseModel):
             self.netG_A.eval()
             self.netG_B.eval()
 
-        if opt.gpu_ids:
+        if opt.gpu_ids[0] < 0:
+            self.netG_A.cpu()
+            self.netG_B.cpu()
+            self.mapping_net.cpu()
+        else:
             self.netG_A.cuda(opt.gpu_ids[0])
             self.netG_B.cuda(opt.gpu_ids[0])
             self.mapping_net.cuda(opt.gpu_ids[0])
@@ -141,7 +145,8 @@ class Pix2PixHDModel_Mapping(BaseModel):
 
     def inference(self, label, inst):
 
-        use_gpu = len(self.opt.gpu_ids) > 0
+        # use_gpu = len(self.opt.gpu_ids) > 0
+        use_gpu = self.opt.gpu_ids[0] >= 0
         if use_gpu:
             input_concat = label.data.cuda()
             inst_data = inst.cuda()

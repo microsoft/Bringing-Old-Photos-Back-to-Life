@@ -67,17 +67,14 @@ def new_face_detector(image):
 
 
 def _standard_face_pts():
-    pts = (
-            np.array([196.0, 226.0, 316.0, 226.0, 256.0, 286.0, 220.0, 360.4, 292.0, 360.4], np.float32) / 256.0
-            - 1.0
-    )
-
+    pts = (np.array([196.0, 226.0, 316.0, 226.0, 256.0,
+                     286.0, 220.0, 360.4, 292.0, 360.4], np.float32) / 256.0 - 1.0)
     return np.reshape(pts, (5, 2))
 
 
 def _origin_face_pts():
-    pts = np.array([196.0, 226.0, 316.0, 226.0, 256.0, 286.0, 220.0, 360.4, 292.0, 360.4], np.float32)
-
+    pts = np.array([196.0, 226.0, 316.0, 226.0, 256.0,
+                    286.0, 220.0, 360.4, 292.0, 360.4], np.float32)
     return np.reshape(pts, (5, 2))
 
 
@@ -85,7 +82,6 @@ def get_landmark(face_landmarks, id):
     part = face_landmarks.part(id)
     x = part.x
     y = part.y
-
     return x, y
 
 
@@ -114,7 +110,6 @@ def search(face_landmarks):
             [x_right_mouth, y_right_mouth],
         ]
     )
-
     return results
 
 
@@ -122,9 +117,8 @@ def show_detection(image, box, landmark):
     plt.imshow(image)
     print(box[2] - box[0])
     plt.gca().add_patch(
-        Rectangle(
-            (box[1], box[0]), box[2] - box[0], box[3] - box[1], linewidth=1, edgecolor="r", facecolor="none"
-        )
+        Rectangle((box[1], box[0]), box[2] - box[0], box[3] - box[1],
+                  linewidth=1, edgecolor="r", facecolor="none")
     )
     plt.scatter(landmark[0][0], landmark[0][1])
     plt.scatter(landmark[1][0], landmark[1][1])
@@ -179,14 +173,13 @@ def data_transforms_global(img, full_size, method=Image.BICUBIC):
 
 def blend_mask(img, mask):
     np_img = np.array(img).astype("float")
-
     return Image.fromarray((np_img * (1 - mask) + mask * 255.0).astype("uint8")).convert("RGB")
 
 
 def data_transforms(img, method=Image.BILINEAR, scale=False):
     ow, oh = img.size
     pw, ph = ow, oh
-    if scale == True:
+    if scale:
         if ow < oh:
             ow = 256
             oh = ph / pw * 256
@@ -199,7 +192,6 @@ def data_transforms(img, method=Image.BILINEAR, scale=False):
 
     if (h == ph) and (w == pw):
         return img
-
     return img.resize((w, h), method)
 
 
@@ -218,7 +210,6 @@ def irregular_hole_synthesize(img, mask):
     img_new = img_np * (1 - mask_np) + mask_np * 255
 
     hole_img = Image.fromarray(img_new.astype("uint8")).convert("RGB")
-
     return hole_img
 
     # stage 4
@@ -236,7 +227,6 @@ def calculate_cdf(histogram):
 
     # Normalize the cdf
     normalized_cdf = cdf / float(cdf.max())
-
     return normalized_cdf
 
 
@@ -251,7 +241,7 @@ def calculate_lookup(src_cdf, ref_cdf):
     lookup_table = np.zeros(256)
     lookup_val = 0
     for src_pixel_val in range(len(src_cdf)):
-        lookup_val
+        lookup_val # ?
         for ref_pixel_val in range(len(ref_cdf)):
             if ref_cdf[ref_pixel_val] >= src_cdf[src_pixel_val]:
                 lookup_val = ref_pixel_val
@@ -310,45 +300,23 @@ def match_histograms(src_image, ref_image):
     return image_after_matching
 
 
-def compute_transformation_matrix(img, landmark, normalize, target_face_scale=1.0):
+# if compute_inverse_transformation_matrix set param inverse=True
+def compute_transformation_matrix(img, landmark, normalize, target_face_scale=1.0, inverse=False):
     std_pts = _standard_face_pts()  # [-1,1]
     target_pts = (std_pts * target_face_scale + 1) / 2 * 256.0
 
-    # print(target_pts)
-
     h, w, c = img.shape
-    if normalize == True:
+    if normalize:
         landmark[:, 0] = landmark[:, 0] / h * 2 - 1.0
         landmark[:, 1] = landmark[:, 1] / w * 2 - 1.0
 
-    # print(landmark)
-
     affine = SimilarityTransform()
-
-    affine.estimate(target_pts, landmark)
+    if inverse:
+        affine.estimate(landmark, target_pts)
+    else:
+        affine.estimate(target_pts, landmark)
 
     return affine
-
-
-def compute_inverse_transformation_matrix(img, landmark, normalize, target_face_scale=1.0):
-    std_pts = _standard_face_pts()  # [-1,1]
-    target_pts = (std_pts * target_face_scale + 1) / 2 * 256.0
-
-    # print(target_pts)
-
-    h, w, c = img.shape
-    if normalize == True:
-        landmark[:, 0] = landmark[:, 0] / h * 2 - 1.0
-        landmark[:, 1] = landmark[:, 1] / w * 2 - 1.0
-
-    # print(landmark)
-
-    affine = SimilarityTransform()
-
-    affine.estimate(landmark, target_pts)
-
-    return affine
-
 
 def blur_blending(im1, im2, mask):
     mask *= 255.0
@@ -495,15 +463,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_folder", type=str, default="", help="Test images")
-    parser.add_argument(
-        "--output_folder",
-        type=str,
-        help="Restored images, please use the absolute path",
-    )
+    parser.add_argument("--output_folder", type=str, help="Restored images, please use the absolute path")
     parser.add_argument("--GPU", type=str, default="6,7", help="0,1,2")
-    parser.add_argument(
-        "--checkpoint_name", type=str, default="Setting_9_epoch_100", help="choose which checkpoint"
-    )
+    parser.add_argument("--checkpoint_name", type=str, default="Setting_9_epoch_100", help="choose which checkpoint")
     parser.add_argument("--with_scratch", action="store_true")
     opts = parser.parse_args()
 
@@ -525,17 +487,10 @@ if __name__ == "__main__":
         os.makedirs(stage_1_output_dir)
 
     if not opts.with_scratch:
-        stage_1_command = (
-                "python test.py --test_mode Full --Quality_restore --test_input "
-                + stage_1_input_dir
-                + " --outputs_dir "
-                + stage_1_output_dir
-                + " --gpu_ids "
-                + gpu1
-        )
+        stage_1_command = (f'python test.py --test_mode Full --Quality_restore --test_input '
+                           f'{stage_1_input_dir} --outputs_dir {stage_1_output_dir} --gpu_ids {gpu1}')
         run_cmd(stage_1_command)
     else:
-
         mask_dir = os.path.join(stage_1_output_dir, "masks")
         new_input = os.path.join(mask_dir, "input")
         new_mask = os.path.join(mask_dir, "mask")
@@ -543,7 +498,8 @@ if __name__ == "__main__":
         print("initializing the dataloader")
         parser = argparse.ArgumentParser()
 
-        parser.GPU = 0
+        # parser.GPU = 0
+        parser.GPU = -1
         parser.test_path = stage_1_input_dir
         parser.output_dir = mask_dir
         parser.input_size = "scale_256"
@@ -568,11 +524,14 @@ if __name__ == "__main__":
         model.load_state_dict(checkpoint["model_state"])
         print("model weights loaded")
 
-        model.to(parser.GPU)
+        if parser.GPU < 0:
+            model.cpu()
+        else:
+            model.to(parser.GPU)
         model.eval()
 
         # dataloader and transformation
-        print("directory of testing image: " + parser.test_path)
+        print(f'directory of testing image: {parser.test_path}')
         imagelist = os.listdir(parser.test_path)
         imagelist.sort()
         total_iter = 0
@@ -599,7 +558,7 @@ if __name__ == "__main__":
             results = []
             scratch_file = os.path.join(parser.test_path, image_name)
             if not os.path.isfile(scratch_file):
-                print("Skipping non-file %s" % image_name)
+                print(f'Skipping non-file {image_name}')
                 continue
             scratch_image = Image.open(scratch_file).convert("RGB")
 
@@ -613,7 +572,12 @@ if __name__ == "__main__":
             scratch_image = tv.transforms.Normalize([0.5], [0.5])(scratch_image)
 
             scratch_image = torch.unsqueeze(scratch_image, 0)
-            scratch_image = scratch_image.to(parser.GPU)
+
+            if parser.GPU < 0:
+                print('!!!')
+                scratch_image = scratch_image.cpu()
+            else:
+                scratch_image = scratch_image.to(parser.GPU)
 
             P = torch.sigmoid(model(scratch_image))
 
@@ -621,16 +585,12 @@ if __name__ == "__main__":
 
             tv.utils.save_image(
                 (P >= 0.4).float(),
-                os.path.join(output_dir, image_name[:-4] + ".png", ),
+                os.path.join(output_dir, f'{image_name[:-4]}.png'),
                 nrow=1,
                 padding=0,
                 normalize=True,
             )
-            transformed_image_PIL.save(os.path.join(input_dir, image_name[:-4] + ".png"))
-            # single_mask=np.array((P>=0.4).float())[0,0,:,:]
-            # RGB_mask=np.stack([single_mask,single_mask,single_mask],axis=2)
-            # blend_output=blend_mask(transformed_image_PIL,RGB_mask)
-            # blend_output.save(os.path.join(blend_output_dir,image_name[:-4]+'.png'))
+            transformed_image_PIL.save(os.path.join(input_dir, f'{image_name[:-4]}.png'))
 
         opt = argparse.ArgumentParser()
         opt.Scratch_and_Quality_restore = True
@@ -663,18 +623,18 @@ if __name__ == "__main__":
         model.initialize(opt)
         model.eval()
 
-        if not os.path.exists(opt.outputs_dir + "/" + "input_image"):
-            os.makedirs(opt.outputs_dir + "/" + "input_image")
-        if not os.path.exists(opt.outputs_dir + "/" + "restored_image"):
-            os.makedirs(opt.outputs_dir + "/" + "restored_image")
-        if not os.path.exists(opt.outputs_dir + "/" + "origin"):
-            os.makedirs(opt.outputs_dir + "/" + "origin")
+        if not os.path.exists(f'{opt.outputs_dir}/input_image'):
+            os.makedirs(f'{opt.outputs_dir}/input_image')
+        if not os.path.exists(f'{opt.outputs_dir}/restored_image'):
+            os.makedirs(f'{opt.outputs_dir}/restored_image')
+        if not os.path.exists(f'{opt.outputs_dir}/origin'):
+            os.makedirs(f'{opt.outputs_dir}/origin')
 
         input_loader = os.listdir(opt.test_input)
         dataset_size = len(input_loader)
         input_loader.sort()
 
-        if opt.test_mask != "":
+        if opt.test_mask is not "":
             mask_loader = os.listdir(opt.test_mask)
             dataset_size = len(os.listdir(opt.test_mask))
             mask_loader.sort()
@@ -689,11 +649,11 @@ if __name__ == "__main__":
             input_name = input_loader[i]
             input_file = os.path.join(opt.test_input, input_name)
             if not os.path.isfile(input_file):
-                print("Skipping non-file %s" % input_name)
+                print(f'Skipping non-file {input_name}')
                 continue
             input = Image.open(input_file).convert("RGB")
 
-            print("Now you are processing %s" % (input_name))
+            print(f'Now you are processing {input_name}')
 
             if opt.NL_use_mask:
                 mask_name = mask_loader[i]
@@ -721,28 +681,28 @@ if __name__ == "__main__":
             try:
                 generated = model.inference(input, mask)
             except Exception as ex:
-                print("Skip %s due to an error:\n%s" % (input_name, str(ex)))
+                print(f'Skip {input_name} due to an error:\n {str(ex)}')
                 continue
 
             if input_name.endswith(".jpg"):
-                input_name = input_name[:-4] + ".png"
+                input_name = f'{input_name[:-4]}.png'
 
             vutils.save_image(
                 (input + 1.0) / 2.0,
-                opt.outputs_dir + "/input_image/" + input_name,
+                f'{opt.outputs_dir}/input_image/{input_name}',
                 nrow=1,
                 padding=0,
                 normalize=True,
             )
             vutils.save_image(
                 (generated.data.cpu() + 1.0) / 2.0,
-                opt.outputs_dir + "/restored_image/" + input_name,
+                f'{opt.outputs_dir}/restored_image/{input_name}',
                 nrow=1,
                 padding=0,
                 normalize=True,
             )
 
-            origin.save(opt.outputs_dir + "/origin/" + input_name)
+            origin.save(f'{opt.outputs_dir}/origin/{input_name}')
 
     # Solve the case when there is no face in the old photo
     stage_1_results = os.path.join(stage_1_output_dir, "restored_image")
@@ -753,8 +713,7 @@ if __name__ == "__main__":
         img_dir = os.path.join(stage_1_results, x)
         shutil.copy(img_dir, stage_4_output_dir)
 
-    print("Finish Stage 1 ...")
-    print("\n")
+    print("Finish Stage 1 ...\n")
 
     # Stage 2: Face Detection
 
@@ -786,25 +745,20 @@ if __name__ == "__main__":
         faces = new_face_detector(image)
         done = time.time()
 
-        if len(faces) == 0:
-            print("Warning: There is no face in %s" % x)
+        if not faces:
+            print(f'Warning: There is no face in {x}')
             continue
-
-        print(len(faces))
-
-        if len(faces) > 0:
-            for face_id in range(len(faces)):
-                current_face = faces[face_id]
+        else:
+            for face_id, current_face in enumerate(faces):
                 face_landmarks = landmark_locator(image, current_face)
                 current_fl = search(face_landmarks)
 
-                affine = compute_transformation_matrix(image, current_fl, False, target_face_scale=1.3).params
+                affine = compute_transformation_matrix(image, current_fl, False, target_face_scale=1.3, inverse=False).params
                 aligned_face = warp(image, affine, output_shape=(256, 256, 3))
-                img_name = x[:-4] + "_" + str(face_id + 1)
-                io.imsave(os.path.join(save_url, img_name + ".png"), img_as_ubyte(aligned_face))
+                img_name = f'{x[:-4]}_{face_id + 1}'
+                io.imsave(os.path.join(save_url, f'{img_name}.png'), img_as_ubyte(aligned_face))
 
-    print("Finish Stage 2 ...")
-    print("\n")
+    print("Finish Stage 2 ...\n")
 
     # Stage 3: Face Restore
     print("Running Stage 3: Face Enhancement")
@@ -877,8 +831,7 @@ if __name__ == "__main__":
 
             vutils.save_image((generated[b] + 1) / 2, save_img_url)
 
-    print("Finish Stage 3 ...")
-    print("\n")
+    print("Finish Stage 3 ...\n")
 
     # Stage 4: Warp back
     print("Running Stage 4: Blending")
@@ -909,19 +862,18 @@ if __name__ == "__main__":
         faces = new_face_detector(image)
         done = time.time()
 
-        if len(faces) == 0:
-            print("Warning: There is no face in %s" % x)
+        if not faces:
+            print(f'Warning: There is no face in {x}')
             continue
 
         blended = image
-        for face_id in range(len(faces)):
-
+        for face_id, current_face in enumerate(faces):
             current_face = faces[face_id]
             face_landmarks = landmark_locator(image, current_face)
             current_fl = search(face_landmarks)
 
             forward_mask = np.ones_like(image).astype("uint8")
-            affine = compute_transformation_matrix(image, current_fl, False, target_face_scale=1.3)
+            affine = compute_transformation_matrix(image, current_fl, False, target_face_scale=1.3, inverse=False)
             aligned_face = warp(image, affine, output_shape=(256, 256, 3), preserve_range=True)
             forward_mask = warp(
                 forward_mask, affine, output_shape=(256, 256, 3), order=0, preserve_range=True
@@ -929,8 +881,8 @@ if __name__ == "__main__":
 
             affine_inverse = affine.inverse
             cur_face = aligned_face
-            if replace_url != "":
-                face_name = x[:-4] + "_" + str(face_id + 1) + ".png"
+            if replace_url is not "":
+                face_name = f'{x[:-4]}_{face_id + 1}.png'
                 cur_url = os.path.join(replace_url, face_name)
                 restored_face = Image.open(cur_url).convert("RGB")
                 restored_face = np.array(restored_face)
@@ -963,7 +915,6 @@ if __name__ == "__main__":
 
         io.imsave(os.path.join(save_url, x), img_as_ubyte(blended / 255.0))
 
-    print("Finish Stage 4 ...")
-    print("\n")
+    print("Finish Stage 4 ...\n")
 
     print("All the processing is done. Please check the results.")
