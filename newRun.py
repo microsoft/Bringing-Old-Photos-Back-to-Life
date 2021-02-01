@@ -21,12 +21,9 @@ from Global.detection_models import networks
 from Global.detection_util.util import *
 from Global.models.mapping_model import Pix2PixHDModel_Mapping
 
-import io
 import numpy as np
 
 import torch.onnx
-import onnx
-import onnxruntime
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -55,7 +52,7 @@ def new_face_detector(image):
     req_handle = exec_face_detect.start_async(
         request_id=0, inputs={FACE_DETECT_INPUT_KEYS: blob})
 
-    time.sleep(1)   # TODO we have to wait a bit before request
+    time.sleep(1)  # TODO we have to wait a bit before request
     res = req_handle.output_blobs[FACE_DETECT_OUTPUT_KEYS].buffer
 
     answer = dlib.rectangles()
@@ -71,6 +68,38 @@ def new_face_detector(image):
         if confidence > 0.9:
             answer.append(face)
     return answer
+
+
+def new_unet_model(image):
+    plugin = IECore()
+
+    device = 'CPU'
+
+    FACE_DETECT_XML = "models/Unet_model.xml"
+    FACE_DETECT_BIN = "models/Unet_model.bin"
+    FACE_DETECT_INPUT_KEYS = 'input.1'
+    FACE_DETECT_OUTPUT_KEYS = '1085'
+    net_face_detect = plugin.read_network(FACE_DETECT_XML, FACE_DETECT_BIN)
+    # Load the Network using Plugin Device
+
+    exec_face_detect = plugin.load_network(net_face_detect, device)
+
+    # Obtain image_count, channels, height and width
+    n_face_detect, c_face_detect, h_face_detect, w_face_detect = net_face_detect.input_info[
+        FACE_DETECT_INPUT_KEYS].input_data.shape
+
+    array = np.array(image)[0][0]
+
+    blob = cv.resize(array, (w_face_detect, h_face_detect))  # Resize width & height
+    blob = blob.reshape((n_face_detect, c_face_detect, h_face_detect, w_face_detect))
+    req_handle = exec_face_detect.start_async(
+        request_id=0, inputs={FACE_DETECT_INPUT_KEYS: blob})
+
+    time.sleep(1)  # TODO we have to wait a bit before request
+    res = req_handle.output_blobs[FACE_DETECT_OUTPUT_KEYS].buffer
+    res = tv.transforms.ToTensor()(res[0][0])
+    res = torch.unsqueeze(res, 0)
+    return res
 
 
 def _standard_face_pts():
@@ -436,7 +465,7 @@ def run_cmd(command):
 
 
 def parameter_set(opt):
-    ## Default parameters
+    # Default parameters
     opt.serial_batches = True  # no shuffle
     opt.no_flip = True  # no flip
     opt.label_nc = 0
@@ -448,7 +477,6 @@ def parameter_set(opt):
     opt.map_mc = 512
     opt.no_instance = True
     opt.checkpoints_dir = "Global/checkpoints/restoration"
-    ##
 
     if opt.Quality_restore:
         opt.name = "mapping_quality"
@@ -510,32 +538,6 @@ if __name__ == "__main__":
         parser.output_dir = mask_dir
         parser.input_size = "scale_256"
 
-        model = networks.UNet(
-            in_channels=1,
-            out_channels=1,
-            depth=4,
-            conv_num=2,
-            wf=6,
-            padding=True,
-            batch_norm=True,
-            up_mode="upsample",
-            with_tanh=False,
-            sync_bn=True,
-            antialiasing=True,
-        )
-
-        # load model
-        checkpoint_path = "./Global/checkpoints/detection/FT_Epoch_latest.pt"
-        checkpoint = torch.load(checkpoint_path, map_location="cpu")
-        model.load_state_dict(checkpoint["model_state"])
-        print("model weights loaded")
-
-        if parser.GPU < 0:
-            model.cpu()
-        else:
-            model.to(parser.GPU)
-        model.eval()
-
         # dataloader and transformation
         print(f'directory of testing image: {parser.test_path}')
         imagelist = os.listdir(parser.test_path)
@@ -584,36 +586,7 @@ if __name__ == "__main__":
             else:
                 scratch_image = scratch_image.to(parser.GPU)
 
-            model_result = model(scratch_image)
-
-            torch.onnx.export(model,  # model being run
-                              scratch_image,  # model input (or a tuple for multiple inputs)
-                              "Unet_model.onnx",  # where to save the model (can be a file or file-like object)
-                              export_params=True,  # store the trained parameter weights inside the model file
-                              opset_version=11
-                              )
-
-            onnx_model = onnx.load("Unet_model.onnx")
-            onnx.checker.check_model(onnx_model)
-
-            ort_session = onnxruntime.InferenceSession("Unet_model.onnx")
-
-
-            def to_numpy(tensor):
-                return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
-
-
-            # compute ONNX Runtime output prediction
-            ort_inputs = {ort_session.get_inputs()[0].name: to_numpy(scratch_image)}
-            ort_outs = ort_session.run(None, ort_inputs)
-
-            # compare ONNX Runtime and PyTorch results
-            np.testing.assert_allclose(to_numpy(model_result), ort_outs[0], rtol=1e-03, atol=1e-05)
-
-            print("Exported model has been tested with ONNXRuntime, and the result looks good!")
-
-            P = torch.sigmoid(model_result)
-
+            P = torch.sigmoid(new_unet_model(scratch_image))
             P = P.data.cpu()
 
             tv.utils.save_image(
