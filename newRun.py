@@ -21,6 +21,13 @@ from Global.detection_models import networks
 from Global.detection_util.util import *
 from Global.models.mapping_model import Pix2PixHDModel_Mapping
 
+import io
+import numpy as np
+
+import torch.onnx
+import onnx
+import onnxruntime
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
@@ -38,7 +45,7 @@ def new_face_detector(image):
 
     exec_face_detect = plugin.load_network(net_face_detect, device)
 
-    #  Obtain image_count, channels, height and width
+    # Obtain image_count, channels, height and width
     n_face_detect, c_face_detect, h_face_detect, w_face_detect = net_face_detect.input_info[
         FACE_DETECT_INPUT_KEYS].input_data.shape
 
@@ -577,7 +584,35 @@ if __name__ == "__main__":
             else:
                 scratch_image = scratch_image.to(parser.GPU)
 
-            P = torch.sigmoid(model(scratch_image))
+            model_result = model(scratch_image)
+
+            torch.onnx.export(model,  # model being run
+                              scratch_image,  # model input (or a tuple for multiple inputs)
+                              "Unet_model.onnx",  # where to save the model (can be a file or file-like object)
+                              export_params=True,  # store the trained parameter weights inside the model file
+                              opset_version=11
+                              )
+
+            onnx_model = onnx.load("Unet_model.onnx")
+            onnx.checker.check_model(onnx_model)
+
+            ort_session = onnxruntime.InferenceSession("Unet_model.onnx")
+
+
+            def to_numpy(tensor):
+                return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
+
+
+            # compute ONNX Runtime output prediction
+            ort_inputs = {ort_session.get_inputs()[0].name: to_numpy(scratch_image)}
+            ort_outs = ort_session.run(None, ort_inputs)
+
+            # compare ONNX Runtime and PyTorch results
+            np.testing.assert_allclose(to_numpy(model_result), ort_outs[0], rtol=1e-03, atol=1e-05)
+
+            print("Exported model has been tested with ONNXRuntime, and the result looks good!")
+
+            P = torch.sigmoid(model_result)
 
             P = P.data.cpu()
 
