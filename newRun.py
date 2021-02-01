@@ -36,7 +36,7 @@ def new_face_detector(image):
     net_face_detect = plugin.read_network(FACE_DETECT_XML, FACE_DETECT_BIN)
     # Load the Network using Plugin Device
 
-    exec_face_detect = plugin.load_network(network=net_face_detect, device_name=device)
+    exec_face_detect = plugin.load_network(net_face_detect, device)
 
     #  Obtain image_count, channels, height and width
     n_face_detect, c_face_detect, h_face_detect, w_face_detect = net_face_detect.input_info[
@@ -45,10 +45,10 @@ def new_face_detector(image):
     blob = cv.resize(image, (w_face_detect, h_face_detect))  # Resize width & height
     blob = blob.transpose((2, 0, 1))  # Change data layout from HWC to CHW
     blob = blob.reshape((n_face_detect, c_face_detect, h_face_detect, w_face_detect))
-
     req_handle = exec_face_detect.start_async(
         request_id=0, inputs={FACE_DETECT_INPUT_KEYS: blob})
 
+    time.sleep(1)   # TODO we have to wait a bit before request
     res = req_handle.output_blobs[FACE_DETECT_OUTPUT_KEYS].buffer
 
     answer = dlib.rectangles()
@@ -241,7 +241,6 @@ def calculate_lookup(src_cdf, ref_cdf):
     lookup_table = np.zeros(256)
     lookup_val = 0
     for src_pixel_val in range(len(src_cdf)):
-        lookup_val # ?
         for ref_pixel_val in range(len(ref_cdf)):
             if ref_cdf[ref_pixel_val] >= src_cdf[src_pixel_val]:
                 lookup_val = ref_pixel_val
@@ -317,6 +316,7 @@ def compute_transformation_matrix(img, landmark, normalize, target_face_scale=1.
         affine.estimate(target_pts, landmark)
 
     return affine
+
 
 def blur_blending(im1, im2, mask):
     mask *= 255.0
@@ -464,7 +464,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_folder", type=str, default="", help="Test images")
     parser.add_argument("--output_folder", type=str, help="Restored images, please use the absolute path")
-    parser.add_argument("--GPU", type=str, default="6,7", help="0,1,2")
+    parser.add_argument("--GPU", type=str, default="-1", help="CPU: -1, GPU: 0,1,2")
     parser.add_argument("--checkpoint_name", type=str, default="Setting_9_epoch_100", help="choose which checkpoint")
     parser.add_argument("--with_scratch", action="store_true")
     opts = parser.parse_args()
@@ -498,8 +498,7 @@ if __name__ == "__main__":
         print("initializing the dataloader")
         parser = argparse.ArgumentParser()
 
-        # parser.GPU = 0
-        parser.GPU = -1
+        parser.GPU = int(gpu1)
         parser.test_path = stage_1_input_dir
         parser.output_dir = mask_dir
         parser.input_size = "scale_256"
@@ -574,7 +573,6 @@ if __name__ == "__main__":
             scratch_image = torch.unsqueeze(scratch_image, 0)
 
             if parser.GPU < 0:
-                print('!!!')
                 scratch_image = scratch_image.cpu()
             else:
                 scratch_image = scratch_image.to(parser.GPU)
@@ -661,7 +659,7 @@ if __name__ == "__main__":
                 origin = input
                 input = irregular_hole_synthesize(input, mask)
                 mask = mask_transform(mask)
-                mask = mask[:1, :, :]  ## Convert to single channel
+                mask = mask[:1, :, :]  # Convert to single channel
                 mask = mask.unsqueeze(0)
                 input = img_transform(input)
                 input = input.unsqueeze(0)
@@ -753,7 +751,8 @@ if __name__ == "__main__":
                 face_landmarks = landmark_locator(image, current_face)
                 current_fl = search(face_landmarks)
 
-                affine = compute_transformation_matrix(image, current_fl, False, target_face_scale=1.3, inverse=False).params
+                affine = compute_transformation_matrix(image, current_fl, False, target_face_scale=1.3,
+                                                       inverse=False).params
                 aligned_face = warp(image, affine, output_shape=(256, 256, 3))
                 img_name = f'{x[:-4]}_{face_id + 1}'
                 io.imsave(os.path.join(save_url, f'{img_name}.png'), img_as_ubyte(aligned_face))
