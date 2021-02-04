@@ -17,11 +17,11 @@ def run_cmd(command):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input_folder", type=str, default="", help="Test images")
+    parser.add_argument("--input_folder", type=str, default="./test_images/old", help="Test images")
     parser.add_argument(
         "--output_folder",
         type=str,
-        default="/home/jingliao/ziyuwan/workspace/codes/PAMI/outputs",
+        default="./output",
         help="Restored images, please use the absolute path",
     )
     parser.add_argument("--GPU", type=str, default="6,7", help="0,1,2")
