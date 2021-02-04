@@ -17,6 +17,9 @@
 [Fang Wen](https://www.microsoft.com/en-us/research/people/fangwen/)<sup>2</sup> <br>
 <sup>1</sup>City University of Hong Kong, <sup>2</sup>Microsoft Research Asia, <sup>3</sup>Microsoft Cloud AI, <sup>4</sup>USTC
 
+## Some notice
+The code originates from our research project and the aim is to demonstrate the research idea, so we have not optimized it from a product perspective. And we will spend time to address some common issues, such as out of memory issue, limited resolution, but will not involve too much in engineering problems, such as speedup of the inference, fastapi deployment and so on. We welcome volunteers to contribute to this project to make it more usable for practical application.
+
 ## New
 You can now play with our [Colab](https://colab.research.google.com/drive/1NEm6AsybIiC5TwTU_4DqDkQO0nFRB-uA?usp=sharing) and try it on your photos. 
 
@@ -71,7 +74,7 @@ pip install -r requirements.txt
 
 ## How to use?
 
-**Note**:GPU can be set 0 or 0,1,2 or 0,2; use -1 for CPU
+**Note**: GPU can be set 0 or 0,1,2 or 0,2; use -1 for CPU
 
 ### 1) Full Pipeline
 
