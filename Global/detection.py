@@ -107,10 +107,8 @@ def main(config):
 
     input_dir = os.path.join(save_url, "input")
     output_dir = os.path.join(save_url, "mask")
-    # blend_output_dir=os.path.join(save_url, 'blend_output')
     mkdir_if_not(input_dir)
     mkdir_if_not(output_dir)
-    # mkdir_if_not(blend_output_dir)
 
     idx = 0
 
