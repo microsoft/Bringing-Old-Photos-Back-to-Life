@@ -66,11 +66,15 @@ class Mapping_Model_with_mask(nn.Module):
             model += [norm_layer(tmp_nc), activation, nn.Conv2d(tmp_nc, opt.feat_dim, 1, 1)]
         # model += [nn.Conv2d(64, 1, 1, 1, 0)]
         self.after_NL = nn.Sequential(*model)
-
+        
+    
     def forward(self, input, mask):
         x1 = self.before_NL(input)
+        del input
         x2 = self.NL(x1, mask)
+        del x1, mask
         x3 = self.after_NL(x2)
+        del x2
 
         return x3
 
