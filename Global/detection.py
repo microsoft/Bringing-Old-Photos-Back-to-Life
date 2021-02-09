@@ -6,6 +6,7 @@ import gc
 import json
 import os
 import time
+import warnings
 
 import numpy as np
 import torch
@@ -16,11 +17,12 @@ from PIL import Image, ImageFile
 from detection_models import networks
 from detection_util.util import *
 
+warnings.filterwarnings("ignore", category=UserWarning)
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def data_transforms(img, full_size, method=Image.BICUBIC):
-    # full_size = "scale_256"
     if full_size == "full_size":
         ow, oh = img.size
         h = int(round(oh / 16) * 16)
@@ -46,14 +48,14 @@ def data_transforms(img, full_size, method=Image.BICUBIC):
         return img.resize((w, h), method)
 
 
-def scale_tensor(img_tensor):
+def scale_tensor(img_tensor, default_scale=256):
     _, _, w, h = img_tensor.shape
     if w < h:
-        ow = 256
-        oh = h / w * 256
+        ow = default_scale
+        oh = h / w * default_scale
     else:
-        oh = 256
-        ow = w / h * 256
+        oh = default_scale
+        ow = w / h * default_scale
 
     oh = int(round(oh / 16) * 16)
     ow = int(round(ow / 16) * 16)
@@ -86,7 +88,7 @@ def main(config):
     )
 
     ## load model
-    checkpoint_path = "./checkpoints/detection/FT_Epoch_latest.pt"
+    checkpoint_path = os.path.join(os.path.dirname(__file__), "checkpoints/detection/FT_Epoch_latest.pt")
     checkpoint = torch.load(checkpoint_path, map_location="cpu")
     model.load_state_dict(checkpoint["model_state"])
     print("model weights loaded")
@@ -107,8 +109,10 @@ def main(config):
 
     input_dir = os.path.join(save_url, "input")
     output_dir = os.path.join(save_url, "mask")
+    # blend_output_dir=os.path.join(save_url, 'blend_output')
     mkdir_if_not(input_dir)
     mkdir_if_not(output_dir)
+    # mkdir_if_not(blend_output_dir)
 
     idx = 0
 
