@@ -1,0 +1,107 @@
+---
+- name: Bringing-Old-Photos-Back-to-Life
+  hosts: all
+  gather_facts: no
+
+# Succesfully tested on Ubuntu 18.04\20.04 and Debian 10 
+
+  pre_tasks: 
+  - name: install packages
+    package:
+      name:
+        - python3
+        - python3-pip
+        - python3-venv
+        - git
+        - unzip
+        - tar
+        - lbzip2
+        - build-essential
+        - cmake
+        - ffmpeg
+        - libsm6
+        - libxext6
+        - libgl1-mesa-glx
+      state: latest
+    become: yes
+
+  tasks:
+  - name: git clone repo
+    git:
+      repo: 'https://github.com/microsoft/Bringing-Old-Photos-Back-to-Life.git'
+      dest: Bringing-Old-Photos-Back-to-Life
+      clone: yes
+
+  - name: requirements setup
+    pip:
+      requirements: "~/Bringing-Old-Photos-Back-to-Life/requirements.txt"
+      virtualenv: "~/Bringing-Old-Photos-Back-to-Life/.venv"
+      virtualenv_command: /usr/bin/python3 -m venv .venv
+
+  - name: additional pip packages #requirements lack some packs
+    pip:
+      name: 
+          - setuptools 
+          - wheel
+          - scikit-build
+      virtualenv: "~/Bringing-Old-Photos-Back-to-Life/.venv"
+      virtualenv_command: /usr/bin/python3 -m venv .venv
+
+  - name: git clone batchnorm-pytorch
+    git:
+      repo: 'https://github.com/vacancy/Synchronized-BatchNorm-PyTorch'
+      dest: Synchronized-BatchNorm-PyTorch
+      clone: yes
+
+  - name: copy sync_batchnorm to face_enhancement
+    copy:
+      src: Synchronized-BatchNorm-PyTorch/sync_batchnorm
+      dest: Bringing-Old-Photos-Back-to-Life/Face_Enhancement/models/networks/
+      remote_src: yes
+
+  - name: copy sync_batchnorm to global
+    copy:
+      src: Synchronized-BatchNorm-PyTorch/sync_batchnorm
+      dest: Bringing-Old-Photos-Back-to-Life/Global/detection_models
+      remote_src: yes
+
+  - name: check if shape_predictor_68_face_landmarks.dat
+    stat:
+      path: Bringing-Old-Photos-Back-to-Life/Face_Detection/shape_predictor_68_face_landmarks.dat
+    register: p
+
+  - name: get shape_predictor_68_face_landmarks.dat.bz2
+    get_url:
+      url: http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
+      dest: Bringing-Old-Photos-Back-to-Life/Face_Detection/
+    when: p.stat.exists == False
+
+  - name: unarchive shape_predictor_68_face_landmarks.dat.bz2
+    shell: 'bzip2 -d Bringing-Old-Photos-Back-to-Life/Face_Detection/shape_predictor_68_face_landmarks.dat.bz2'
+    when: p.stat.exists == False
+
+  - name: check if face_enhancement
+    stat:
+      path: Bringing-Old-Photos-Back-to-Life/Face_Enhancement/checkpoints/Setting_9_epoch_100/latest_net_G.pth
+    register: fc
+
+  - name: unarchive Face_Enhancement/checkpoints.zip
+    unarchive:
+      src: https://facevc.blob.core.windows.net/zhanbo/old_photo/pretrain/Face_Enhancement/checkpoints.zip
+      dest: Bringing-Old-Photos-Back-to-Life/Face_Enhancement/
+      remote_src: yes
+    when: fc.stat.exists == False
+
+  - name: check if global
+    stat:
+      path: Bringing-Old-Photos-Back-to-Life/Global/checkpoints/detection/FT_Epoch_latest.pt
+    register: gc
+
+  - name: unarchive Global/checkpoints.zip
+    unarchive:
+      src: https://facevc.blob.core.windows.net/zhanbo/old_photo/pretrain/Global/checkpoints.zip
+      dest: Bringing-Old-Photos-Back-to-Life/Global/
+      remote_src: yes
+    when: gc.stat.exists == False
+
+# Do not forget to execute 'source .venv/bin/activate' inside Bringing-Old-Photos-Back-to-Life before starting run.py
