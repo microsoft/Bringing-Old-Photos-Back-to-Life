@@ -11,7 +11,9 @@ import torch.nn.functional as F
 class Downsample(nn.Module):
     # https://github.com/adobe/antialiased-cnns
 
-    def __init__(self, pad_type="reflect", filt_size=3, stride=2, channels=None, pad_off=0):
+    def __init__(
+        self, pad_type="reflect", filt_size=3, stride=2, channels=None, pad_off=0
+    ):
         super(Downsample, self).__init__()
         self.filt_size = filt_size
         self.pad_off = pad_off
@@ -28,7 +30,11 @@ class Downsample(nn.Module):
 
         # print('Filter size [%i]'%filt_size)
         if self.filt_size == 1:
-            a = np.array([1.0,])
+            a = np.array(
+                [
+                    1.0,
+                ]
+            )
         elif self.filt_size == 2:
             a = np.array([1.0, 1.0])
         elif self.filt_size == 3:
@@ -44,7 +50,9 @@ class Downsample(nn.Module):
 
         filt = torch.Tensor(a[:, None] * a[None, :])
         filt = filt / torch.sum(filt)
-        self.register_buffer("filt", filt[None, None, :, :].repeat((self.channels, 1, 1, 1)))
+        self.register_buffer(
+            "filt", filt[None, None, :, :].repeat((self.channels, 1, 1, 1))
+        )
 
         self.pad = get_pad_layer(pad_type)(self.pad_sizes)
 
@@ -55,7 +63,9 @@ class Downsample(nn.Module):
             else:
                 return self.pad(inp)[:, :, :: self.stride, :: self.stride]
         else:
-            return F.conv2d(self.pad(inp), self.filt, stride=self.stride, groups=inp.shape[1])
+            return F.conv2d(
+                self.pad(inp), self.filt, stride=self.stride, groups=inp.shape[1]
+            )
 
 
 def get_pad_layer(pad_type):

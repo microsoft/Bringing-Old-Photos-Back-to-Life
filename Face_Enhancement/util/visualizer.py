@@ -35,7 +35,9 @@ class Visualizer:
                 self.writer = SummaryWriter(log_dir=self.log_dir)
             else:
                 print("hi :)")
-                self.log_dir = os.path.join(opt.checkpoints_dir, opt.name, opt.results_dir)
+                self.log_dir = os.path.join(
+                    opt.checkpoints_dir, opt.name, opt.results_dir
+                )
                 if not os.path.exists(self.log_dir):
                     os.makedirs(self.log_dir)
 
@@ -43,7 +45,9 @@ class Visualizer:
             self.log_name = os.path.join(opt.checkpoints_dir, opt.name, "loss_log.txt")
             with open(self.log_name, "a") as log_file:
                 now = time.strftime("%c")
-                log_file.write("================ Training Loss (%s) ================\n" % now)
+                log_file.write(
+                    "================ Training Loss (%s) ================\n" % now
+                )
 
     # |visuals|: dictionary of images to display or save
     def display_current_results(self, visuals, epoch, step):
@@ -55,7 +59,9 @@ class Visualizer:
                 all_tensor.append((tensor.data.cpu() + 1) / 2)
 
             output = torch.cat(all_tensor, 0)
-            img_grid = vutils.make_grid(output, nrow=self.opt.batchSize, padding=0, normalize=False)
+            img_grid = vutils.make_grid(
+                output, nrow=self.opt.batchSize, padding=0, normalize=False
+            )
 
             if self.opt.isTrain:
                 self.writer.add_image("Face_SPADE/training_samples", img_grid, step)
@@ -73,18 +79,26 @@ class Visualizer:
         if self.tf_log:
             for tag, value in errors.items():
                 value = value.mean().float()
-                summary = self.tf.Summary(value=[self.tf.Summary.Value(tag=tag, simple_value=value)])
+                summary = self.tf.Summary(
+                    value=[self.tf.Summary.Value(tag=tag, simple_value=value)]
+                )
                 self.writer.add_summary(summary, step)
 
         if self.tensorboard_log:
 
-            self.writer.add_scalar("Loss/GAN_Feat", errors["GAN_Feat"].mean().float(), step)
+            self.writer.add_scalar(
+                "Loss/GAN_Feat", errors["GAN_Feat"].mean().float(), step
+            )
             self.writer.add_scalar("Loss/VGG", errors["VGG"].mean().float(), step)
             self.writer.add_scalars(
                 "Loss/GAN",
                 {
                     "G": errors["GAN"].mean().float(),
-                    "D": (errors["D_Fake"].mean().float() + errors["D_real"].mean().float()) / 2,
+                    "D": (
+                        errors["D_Fake"].mean().float()
+                        + errors["D_real"].mean().float()
+                    )
+                    / 2,
                 },
                 step,
             )
@@ -104,7 +118,9 @@ class Visualizer:
         for key, t in visuals.items():
             tile = self.opt.batchSize > 8
             if "input_label" == key:
-                t = util.tensor2label(t, self.opt.label_nc + 2, tile=tile)  ## B*H*W*C 0-255 numpy
+                t = util.tensor2label(
+                    t, self.opt.label_nc + 2, tile=tile
+                )  ## B*H*W*C 0-255 numpy
             else:
                 t = util.tensor2im(t, tile=tile)
             visuals[key] = t

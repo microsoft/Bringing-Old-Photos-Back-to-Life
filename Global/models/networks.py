@@ -239,7 +239,10 @@ class GlobalGenerator_DCDCv2(nn.Module):
                 activation,
             ]
         if opt.use_segmentation_model:
-            model += [nn.ReflectionPad2d(3), nn.Conv2d(min(ngf, opt.mc), output_nc, kernel_size=7, padding=0)]
+            model += [
+                nn.ReflectionPad2d(3),
+                nn.Conv2d(min(ngf, opt.mc), output_nc, kernel_size=7, padding=0),
+            ]
         else:
             model += [
                 nn.ReflectionPad2d(3),
@@ -262,12 +265,21 @@ class GlobalGenerator_DCDCv2(nn.Module):
 # Define a resnet block
 class ResnetBlock(nn.Module):
     def __init__(
-        self, dim, padding_type, norm_layer, opt, activation=nn.ReLU(True), use_dropout=False, dilation=1
+        self,
+        dim,
+        padding_type,
+        norm_layer,
+        opt,
+        activation=nn.ReLU(True),
+        use_dropout=False,
+        dilation=1,
     ):
         super(ResnetBlock, self).__init__()
         self.opt = opt
         self.dilation = dilation
-        self.conv_block = self.build_conv_block(dim, padding_type, norm_layer, activation, use_dropout)
+        self.conv_block = self.build_conv_block(
+            dim, padding_type, norm_layer, activation, use_dropout
+        )
 
     def build_conv_block(self, dim, padding_type, norm_layer, activation, use_dropout):
         conv_block = []
@@ -298,7 +310,10 @@ class ResnetBlock(nn.Module):
             p = 1
         else:
             raise NotImplementedError("padding [%s] is not implemented" % padding_type)
-        conv_block += [nn.Conv2d(dim, dim, kernel_size=3, padding=p, dilation=1), norm_layer(dim)]
+        conv_block += [
+            nn.Conv2d(dim, dim, kernel_size=3, padding=p, dilation=1),
+            norm_layer(dim),
+        ]
 
         return nn.Sequential(*conv_block)
 
@@ -308,7 +323,9 @@ class ResnetBlock(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, input_nc, output_nc, ngf=32, n_downsampling=4, norm_layer=nn.BatchNorm2d):
+    def __init__(
+        self, input_nc, output_nc, ngf=32, n_downsampling=4, norm_layer=nn.BatchNorm2d
+    ):
         super(Encoder, self).__init__()
         self.output_nc = output_nc
 
@@ -322,7 +339,9 @@ class Encoder(nn.Module):
         for i in range(n_downsampling):
             mult = 2 ** i
             model += [
-                nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
+                nn.Conv2d(
+                    ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1
+                ),
                 norm_layer(ngf * mult * 2),
                 nn.ReLU(True),
             ]
@@ -332,13 +351,22 @@ class Encoder(nn.Module):
             mult = 2 ** (n_downsampling - i)
             model += [
                 nn.ConvTranspose2d(
-                    ngf * mult, int(ngf * mult / 2), kernel_size=3, stride=2, padding=1, output_padding=1
+                    ngf * mult,
+                    int(ngf * mult / 2),
+                    kernel_size=3,
+                    stride=2,
+                    padding=1,
+                    output_padding=1,
                 ),
                 norm_layer(int(ngf * mult / 2)),
                 nn.ReLU(True),
             ]
 
-        model += [nn.ReflectionPad2d(3), nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0), nn.Tanh()]
+        model += [
+            nn.ReflectionPad2d(3),
+            nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0),
+            nn.Tanh(),
+        ]
         self.model = nn.Sequential(*model)
 
     def forward(self, input, inst):
@@ -351,10 +379,18 @@ class Encoder(nn.Module):
             for b in range(input.size()[0]):
                 indices = (inst[b : b + 1] == int(i)).nonzero()  # n x 4
                 for j in range(self.output_nc):
-                    output_ins = outputs[indices[:, 0] + b, indices[:, 1] + j, indices[:, 2], indices[:, 3]]
+                    output_ins = outputs[
+                        indices[:, 0] + b,
+                        indices[:, 1] + j,
+                        indices[:, 2],
+                        indices[:, 3],
+                    ]
                     mean_feat = torch.mean(output_ins).expand_as(output_ins)
                     outputs_mean[
-                        indices[:, 0] + b, indices[:, 1] + j, indices[:, 2], indices[:, 3]
+                        indices[:, 0] + b,
+                        indices[:, 1] + j,
+                        indices[:, 2],
+                        indices[:, 3],
                     ] = mean_feat
         return outputs_mean
 
@@ -385,11 +421,19 @@ class NonLocalBlock2D_with_mask_Res(nn.Module):
         self.inter_channels = inter_channels
 
         self.g = nn.Conv2d(
-            in_channels=self.in_channels, out_channels=self.inter_channels, kernel_size=1, stride=1, padding=0
+            in_channels=self.in_channels,
+            out_channels=self.inter_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0,
         )
 
         self.W = nn.Conv2d(
-            in_channels=self.inter_channels, out_channels=self.in_channels, kernel_size=1, stride=1, padding=0
+            in_channels=self.inter_channels,
+            out_channels=self.in_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0,
         )
         # for pytorch 0.3.1
         # nn.init.constant(self.W.weight, 0)
@@ -398,11 +442,19 @@ class NonLocalBlock2D_with_mask_Res(nn.Module):
         nn.init.constant_(self.W.weight, 0)
         nn.init.constant_(self.W.bias, 0)
         self.theta = nn.Conv2d(
-            in_channels=self.in_channels, out_channels=self.inter_channels, kernel_size=1, stride=1, padding=0
+            in_channels=self.in_channels,
+            out_channels=self.inter_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0,
         )
 
         self.phi = nn.Conv2d(
-            in_channels=self.in_channels, out_channels=self.inter_channels, kernel_size=1, stride=1, padding=0
+            in_channels=self.in_channels,
+            out_channels=self.inter_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0,
         )
 
         self.mode = mode
@@ -465,7 +517,9 @@ class NonLocalBlock2D_with_mask_Res(nn.Module):
         # mask_expand=mask_expand.repeat(1,x.size(2)*x.size(3),1)
 
         if self.use_self:
-            mask_expand[:, range(x.size(2) * x.size(3)), range(x.size(2) * x.size(3))] = 1.0
+            mask_expand[
+                :, range(x.size(2) * x.size(3)), range(x.size(2) * x.size(3))
+            ] = 1.0
 
         #    print(mask_expand.shape)
         #    print(f_div_C.shape)
@@ -489,4 +543,3 @@ class NonLocalBlock2D_with_mask_Res(nn.Module):
             full_mask = mask.repeat(1, self.inter_channels, 1, 1)
             z = full_mask * x + (1 - full_mask) * W_y
         return z
-

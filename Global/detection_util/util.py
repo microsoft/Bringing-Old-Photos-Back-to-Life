@@ -36,7 +36,12 @@ def save_options(config_dict):
     mkdir_if_not(file_dir)
     file_name = os.path.join(file_dir, "opt.txt")
     with open(file_name, "wt") as opt_file:
-        opt_file.write(os.path.basename(sys.argv[0]) + " " + strftime("%Y-%m-%d %H:%M:%S", gmtime()) + "\n")
+        opt_file.write(
+            os.path.basename(sys.argv[0])
+            + " "
+            + strftime("%Y-%m-%d %H:%M:%S", gmtime())
+            + "\n"
+        )
         opt_file.write("------------ Options -------------\n")
         for k, v in sorted(config_dict.items()):
             opt_file.write("%s: %s\n" % (str(k), str(v)))
@@ -143,11 +148,17 @@ def clean_tensorboard(directory):
                 os.remove(tensorboard)
 
 
-def prepare_tensorboard(config, experiment_name=datetime.now().strftime("%Y-%m-%d %H-%M-%S")):
-    tensorboard_directory = os.path.join(config.checkpoint_dir, config.name, "tensorboard_logs")
+def prepare_tensorboard(
+    config, experiment_name=datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+):
+    tensorboard_directory = os.path.join(
+        config.checkpoint_dir, config.name, "tensorboard_logs"
+    )
     mkdir_if_not(tensorboard_directory)
     clean_tensorboard(tensorboard_directory)
-    tb_writer = SummaryWriter(os.path.join(tensorboard_directory, experiment_name), flush_secs=10)
+    tb_writer = SummaryWriter(
+        os.path.join(tensorboard_directory, experiment_name), flush_secs=10
+    )
 
     # try:
     #     shutil.copy('outputs/opt.txt', tensorboard_directory)
@@ -178,7 +189,9 @@ def tb_image_logger(tb_writer, iter_index, images_info, config):
 
 def tb_image_logger_test(epoch, iter, images_info, config):
 
-    url = os.path.join(config.output_dir, config.name, config.train_mode, "val_" + str(epoch))
+    url = os.path.join(
+        config.output_dir, config.name, config.train_mode, "val_" + str(epoch)
+    )
     if not os.path.exists(url):
         os.makedirs(url)
     scratch_img = images_info["test_scratch_image"].data.cpu()
@@ -192,7 +205,11 @@ def tb_image_logger_test(epoch, iter, images_info, config):
 
     imgs = torch.cat((scratch_img, predict_hard_mask, gt_mask), 0)
     img_grid = vutils.save_image(
-        imgs, os.path.join(url, str(iter) + ".jpg"), nrow=len(scratch_img), padding=0, normalize=True
+        imgs,
+        os.path.join(url, str(iter) + ".jpg"),
+        nrow=len(scratch_img),
+        padding=0,
+        normalize=True,
     )
 
 
@@ -216,11 +233,13 @@ def imshow(input_image, title=None, to_numpy=False):
 def vgg_preprocess(tensor):
     # input is RGB tensor which ranges in [0,1]
     # output is BGR tensor which ranges in [0,255]
-    tensor_bgr = torch.cat((tensor[:, 2:3, :, :], tensor[:, 1:2, :, :], tensor[:, 0:1, :, :]), dim=1)
-    # tensor_bgr = tensor[:, [2, 1, 0], ...]
-    tensor_bgr_ml = tensor_bgr - torch.Tensor([0.40760392, 0.45795686, 0.48501961]).type_as(tensor_bgr).view(
-        1, 3, 1, 1
+    tensor_bgr = torch.cat(
+        (tensor[:, 2:3, :, :], tensor[:, 1:2, :, :], tensor[:, 0:1, :, :]), dim=1
     )
+    # tensor_bgr = tensor[:, [2, 1, 0], ...]
+    tensor_bgr_ml = tensor_bgr - torch.Tensor(
+        [0.40760392, 0.45795686, 0.48501961]
+    ).type_as(tensor_bgr).view(1, 3, 1, 1)
     tensor_rst = tensor_bgr_ml * 255
     return tensor_rst
 
@@ -230,8 +249,12 @@ def torch_vgg_preprocess(tensor):
     # note that both input and output are RGB tensors;
     # input and output ranges in [0,1]
     # normalize the tensor with mean and variance
-    tensor_mc = tensor - torch.Tensor([0.485, 0.456, 0.406]).type_as(tensor).view(1, 3, 1, 1)
-    tensor_mc_norm = tensor_mc / torch.Tensor([0.229, 0.224, 0.225]).type_as(tensor_mc).view(1, 3, 1, 1)
+    tensor_mc = tensor - torch.Tensor([0.485, 0.456, 0.406]).type_as(tensor).view(
+        1, 3, 1, 1
+    )
+    tensor_mc_norm = tensor_mc / torch.Tensor([0.229, 0.224, 0.225]).type_as(
+        tensor_mc
+    ).view(1, 3, 1, 1)
     return tensor_mc_norm
 
 

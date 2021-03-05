@@ -62,7 +62,10 @@ class SPADE(nn.Module):
         elif param_free_norm_type == "batch":
             self.param_free_norm = nn.BatchNorm2d(norm_nc, affine=False)
         else:
-            raise ValueError("%s is not a recognized param-free norm type in SPADE" % param_free_norm_type)
+            raise ValueError(
+                "%s is not a recognized param-free norm type in SPADE"
+                % param_free_norm_type
+            )
 
         # The dimension of the intermediate embedding space. Yes, hardcoded.
         nhidden = 128
@@ -70,7 +73,9 @@ class SPADE(nn.Module):
         pw = ks // 2
 
         if self.opt.no_parsing_map:
-            self.mlp_shared = nn.Sequential(nn.Conv2d(3, nhidden, kernel_size=ks, padding=pw), nn.ReLU())
+            self.mlp_shared = nn.Sequential(
+                nn.Conv2d(3, nhidden, kernel_size=ks, padding=pw), nn.ReLU()
+            )
         else:
             self.mlp_shared = nn.Sequential(
                 nn.Conv2d(label_nc + 3, nhidden, kernel_size=ks, padding=pw), nn.ReLU()
@@ -85,7 +90,9 @@ class SPADE(nn.Module):
 
         # Part 2. produce scaling and bias conditioned on semantic map
         segmap = F.interpolate(segmap, size=x.size()[2:], mode="nearest")
-        degraded_face = F.interpolate(degraded_image, size=x.size()[2:], mode="bilinear")
+        degraded_face = F.interpolate(
+            degraded_image, size=x.size()[2:], mode="bilinear"
+        )
 
         if self.opt.no_parsing_map:
             actv = self.mlp_shared(degraded_face)
