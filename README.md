@@ -170,7 +170,7 @@ python train_domain_A.py --use_v2_degradation --continue_train --training_datase
 
 python train_domain_B.py --continue_train --training_dataset domain_B --name domainB_old_photos --label_nc 0 --loadSize 256 --fineSize 256 --dataroot [your_data_folder]  --no_instance --resize_or_crop crop_only --batchSize 120 --no_html --gpu_ids 0,1,2,3 --self_gen --nThreads 4 --n_downsample_global 3 --k_size 4 --use_v2 --mc 64 --start_r 1 --kl 1 --no_cgan --outputs_dir [your_output_folder]  --checkpoints_dir [your_ckpt_folder]
 ```
-Note: For the --name option, please ensure your experiment name contains "domainA" or "domainB", which will be used to select different dataset
+Note: For the --name option, please ensure your experiment name contains "domainA" or "domainB", which will be used to select different dataset.
 
 ### 3) Train the mapping network between domains
 
@@ -192,7 +192,7 @@ python train_mapping.py --no_TTUR --NL_res --random_hole --use_SN --correlation_
 - [x] Release pretrained model
 - [x] Collab demo
 - [ ] Replace face detection module (dlib) with RetinaFace
-- [ ] Release training code
+- [x] Release training code
 
 
 ## Citation
