@@ -151,6 +151,42 @@ We use a progressive generator to refine the face regions of old photos. More de
 > 
 > Since the model is pretrained with 256*256 images, the model may not work ideally for arbitrary resolution.
 
+## How to train?
+
+### 1) Create Training File
+
+Put the folders of VOC dataset, collected old photos (e.g., Real_L_old and Real_RGB_old) into one shared folder. Then
+```
+cd Global/data/
+python Create_Bigfile.py
+```
+Note: Remember to modify the code based on your own environment.
+
+### 2) Train the VAEs of domain A and domain B respectively
+
+```
+cd ..
+python train_domain_A.py --use_v2_degradation --continue_train --training_dataset domain_A --name domainA_SR_old_photos --label_nc 0 --loadSize 256 --fineSize 256 --dataroot [your_data_folder] --no_instance --resize_or_crop crop_only --batchSize 100 --no_html --gpu_ids 0,1,2,3 --self_gen --nThreads 4 --n_downsample_global 3 --k_size 4 --use_v2 --mc 64 --start_r 1 --kl 1 --no_cgan --outputs_dir [your_output_folder] --checkpoints_dir [your_ckpt_folder]
+
+python train_domain_B.py --continue_train --training_dataset domain_B --name domainB_old_photos --label_nc 0 --loadSize 256 --fineSize 256 --dataroot [your_data_folder]  --no_instance --resize_or_crop crop_only --batchSize 120 --no_html --gpu_ids 0,1,2,3 --self_gen --nThreads 4 --n_downsample_global 3 --k_size 4 --use_v2 --mc 64 --start_r 1 --kl 1 --no_cgan --outputs_dir [your_output_folder]  --checkpoints_dir [your_ckpt_folder]
+```
+Note: For the --name option, please ensure your experiment name contains "domainA" or "domainB", which will be used to select different dataset
+
+### 3) Train the mapping network between domains
+
+Train the mapping without scratches:
+```
+python train_mapping.py --use_v2_degradation --training_dataset mapping --use_vae_which_epoch 200 --continue_train --name mapping_quality --label_nc 0 --loadSize 256 --fineSize 256 --dataroot [your_data_folder] --no_instance --resize_or_crop crop_only --batchSize 80 --no_html --gpu_ids 0,1,2,3 --nThreads 8 --load_pretrainA [ckpt_of_domainA_SR_old_photos] --load_pretrainB [ckpt_of_domainB_old_photos] --l2_feat 60 --n_downsample_global 3 --mc 64 --k_size 4 --start_r 1 --mapping_n_block 6 --map_mc 512 --use_l1_feat --niter 150 --niter_decay 100 --outputs_dir [your_output_folder] --checkpoints_dir [your_ckpt_folder]
+```
+
+
+Traing the mapping with scraches:
+```
+python train_mapping.py --no_TTUR --NL_res --random_hole --use_SN --correlation_renormalize --training_dataset mapping --NL_use_mask --NL_fusion_method combine --non_local Setting_42 --use_v2_degradation --use_vae_which_epoch 200 --continue_train --name mapping_scratch --label_nc 0 --loadSize 256 --fineSize 256 --dataroot [your_data_folder] --no_instance --resize_or_crop crop_only --batchSize 36 --no_html --gpu_ids 0,1,2,3 --nThreads 8 --load_pretrainA [ckpt_of_domainA_SR_old_photos] --load_pretrainB [ckpt_of_domainB_old_photos] --l2_feat 60 --n_downsample_global 3 --mc 64 --k_size 4 --start_r 1 --mapping_n_block 6 --map_mc 512 --use_l1_feat --niter 150 --niter_decay 100 --outputs_dir [your_output_folder] --checkpoints_dir [your_ckpt_folder] --irregular_mask [absolute_path_of_mask_file]
+```
+
+
+
 ## To Do
 - [x] Clean testing code
 - [x] Release pretrained model
@@ -163,7 +199,7 @@ We use a progressive generator to refine the face regions of old photos. More de
 
 If you find our work useful for your research, please consider citing the following papers :)
 
-```
+```bibtex
 @inproceedings{wan2020bringing,
 title={Bringing Old Photos Back to Life},
 author={Wan, Ziyu and Zhang, Bo and Chen, Dongdong and Zhang, Pan and Chen, Dong and Liao, Jing and Wen, Fang},
@@ -173,17 +209,16 @@ year={2020}
 }
 ```
 
-```
-@misc{2009.07047,
-Author = {Ziyu Wan and Bo Zhang and Dongdong Chen and Pan Zhang and Dong Chen and Jing Liao and Fang Wen},
-Title = {Old Photo Restoration via Deep Latent Space Translation},
-Year = {2020},
-Eprint = {arXiv:2009.07047},
+```bibtex
+@article{wan2020old,
+  title={Old Photo Restoration via Deep Latent Space Translation},
+  author={Wan, Ziyu and Zhang, Bo and Chen, Dongdong and Zhang, Pan and Chen, Dong and Liao, Jing and Wen, Fang},
+  journal={arXiv preprint arXiv:2009.07047},
+  year={2020}
 }
 ```
 
 If you are also interested in the legacy photo/video colorization, please refer to [this work](https://github.com/zhangmozhe/video-colorization).
-
 
 ## Maintenance
 
