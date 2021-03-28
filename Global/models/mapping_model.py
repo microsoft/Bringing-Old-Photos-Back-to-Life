@@ -102,7 +102,7 @@ class Pix2PixHDModel_Mapping(BaseModel):
             opt=opt,
         )
 
-        if opt.non_local == "Setting_42":
+        if opt.non_local == "Setting_42" or opt.NL_use_mask:
             self.mapping_net = Mapping_Model_with_mask(
                 min(opt.ngf * 2 ** opt.n_downsample_global, opt.mc),
                 opt.map_mc,
@@ -137,7 +137,180 @@ class Pix2PixHDModel_Mapping(BaseModel):
             self.netG_A.cuda(opt.gpu_ids[0])
             self.netG_B.cuda(opt.gpu_ids[0])
             self.mapping_net.cuda(opt.gpu_ids[0])
-        self.load_network(self.mapping_net, "mapping_net", opt.which_epoch)
+        
+        if not self.isTrain:
+            self.load_network(self.mapping_net, "mapping_net", opt.which_epoch)
+
+        # Discriminator network
+        if self.isTrain:
+            use_sigmoid = opt.no_lsgan
+            netD_input_nc = opt.ngf * 2 if opt.feat_gan else input_nc + opt.output_nc
+            if not opt.no_instance:
+                netD_input_nc += 1
+
+            self.netD = networks.define_D(netD_input_nc, opt.ndf, opt.n_layers_D, opt, opt.norm, use_sigmoid,
+                                              opt.num_D, not opt.no_ganFeat_loss, gpu_ids=self.gpu_ids)
+
+        # set loss functions and optimizers
+        if self.isTrain:
+            if opt.pool_size > 0 and (len(self.gpu_ids)) > 1:
+                raise NotImplementedError("Fake Pool Not Implemented for MultiGPU")
+            self.fake_pool = ImagePool(opt.pool_size)
+            self.old_lr = opt.lr
+
+            # define loss functions
+            self.loss_filter = self.init_loss_filter(not opt.no_ganFeat_loss, not opt.no_vgg_loss, opt.Smooth_L1, opt.use_two_stage_mapping)
+
+            self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)
+
+
+            self.criterionFeat = torch.nn.L1Loss()
+            self.criterionFeat_feat = torch.nn.L1Loss() if opt.use_l1_feat else torch.nn.MSELoss()
+
+            if self.opt.image_L1:
+                self.criterionImage=torch.nn.L1Loss()
+            else:
+                self.criterionImage = torch.nn.SmoothL1Loss()
+
+
+            print(self.criterionFeat_feat)
+            if not opt.no_vgg_loss:
+                self.criterionVGG = networks.VGGLoss_torch(self.gpu_ids)
+                
+        
+            # Names so we can breakout loss
+            self.loss_names = self.loss_filter('G_Feat_L2', 'G_GAN', 'G_GAN_Feat', 'G_VGG','D_real', 'D_fake', 'Smooth_L1', 'G_Feat_L2_Stage_1')
+
+            # initialize optimizers
+            # optimizer G
+
+            if opt.no_TTUR:
+                beta1,beta2=opt.beta1,0.999
+                G_lr,D_lr=opt.lr,opt.lr
+            else:
+                beta1,beta2=0,0.9
+                G_lr,D_lr=opt.lr/2,opt.lr*2
+
+
+            if not opt.no_load_VAE:
+                params = list(self.mapping_net.parameters())
+                self.optimizer_mapping = torch.optim.Adam(params, lr=G_lr, betas=(beta1, beta2))
+
+            # optimizer D                        
+            params = list(self.netD.parameters())    
+            self.optimizer_D = torch.optim.Adam(params, lr=D_lr, betas=(beta1, beta2))
+
+            print("---------- Optimizers initialized -------------")
+
+    def encode_input(self, label_map, inst_map=None, real_image=None, feat_map=None, infer=False):             
+        if self.opt.label_nc == 0:
+            input_label = label_map.data.cuda()
+        else:
+            # create one-hot vector for label map 
+            size = label_map.size()
+            oneHot_size = (size[0], self.opt.label_nc, size[2], size[3])
+            input_label = torch.cuda.FloatTensor(torch.Size(oneHot_size)).zero_()
+            input_label = input_label.scatter_(1, label_map.data.long().cuda(), 1.0)
+            if self.opt.data_type == 16:
+                input_label = input_label.half()
+
+        # get edges from instance map
+        if not self.opt.no_instance:
+            inst_map = inst_map.data.cuda()
+            edge_map = self.get_edges(inst_map)
+            input_label = torch.cat((input_label, edge_map), dim=1)         
+        input_label = Variable(input_label, volatile=infer)
+
+        # real images for training
+        if real_image is not None:
+            real_image = Variable(real_image.data.cuda())
+
+        return input_label, inst_map, real_image, feat_map
+
+    def discriminate(self, input_label, test_image, use_pool=False):
+        input_concat = torch.cat((input_label, test_image.detach()), dim=1)
+        if use_pool:            
+            fake_query = self.fake_pool.query(input_concat)
+            return self.netD.forward(fake_query)
+        else:
+            return self.netD.forward(input_concat)
+
+    def forward(self, label, inst, image, feat, pair=True, infer=False, last_label=None, last_image=None):
+        # Encode Inputs
+        input_label, inst_map, real_image, feat_map = self.encode_input(label, inst, image, feat)  
+
+        # Fake Generation
+        input_concat = input_label
+        
+        label_feat = self.netG_A.forward(input_concat, flow='enc')
+        # print('label:')
+        # print(label_feat.min(), label_feat.max(), label_feat.mean())
+        #label_feat = label_feat / 16.0
+
+        if self.opt.NL_use_mask:
+            label_feat_map=self.mapping_net(label_feat.detach(),inst)
+        else:
+            label_feat_map = self.mapping_net(label_feat.detach())
+        
+        fake_image = self.netG_B.forward(label_feat_map, flow='dec')
+        image_feat = self.netG_B.forward(real_image, flow='enc')
+
+        loss_feat_l2_stage_1=0
+        loss_feat_l2 = self.criterionFeat_feat(label_feat_map, image_feat.data) * self.opt.l2_feat
+            
+
+        if self.opt.feat_gan:
+            # Fake Detection and Loss
+            pred_fake_pool = self.discriminate(label_feat.detach(), label_feat_map, use_pool=True)
+            loss_D_fake = self.criterionGAN(pred_fake_pool, False)        
+
+            # Real Detection and Loss        
+            pred_real = self.discriminate(label_feat.detach(), image_feat)
+            loss_D_real = self.criterionGAN(pred_real, True)
+
+            # GAN loss (Fake Passability Loss)        
+            pred_fake = self.netD.forward(torch.cat((label_feat.detach(), label_feat_map), dim=1))        
+            loss_G_GAN = self.criterionGAN(pred_fake, True)  
+        else:
+            # Fake Detection and Loss
+            pred_fake_pool = self.discriminate(input_label, fake_image, use_pool=True)
+            loss_D_fake = self.criterionGAN(pred_fake_pool, False)        
+
+            # Real Detection and Loss  
+            if pair:      
+                pred_real = self.discriminate(input_label, real_image)
+            else:
+                pred_real = self.discriminate(last_label, last_image)
+            loss_D_real = self.criterionGAN(pred_real, True)
+
+            # GAN loss (Fake Passability Loss)        
+            pred_fake = self.netD.forward(torch.cat((input_label, fake_image), dim=1))        
+            loss_G_GAN = self.criterionGAN(pred_fake, True)               
+        
+        # GAN feature matching loss
+        loss_G_GAN_Feat = 0
+        if not self.opt.no_ganFeat_loss and pair:
+            feat_weights = 4.0 / (self.opt.n_layers_D + 1)
+            D_weights = 1.0 / self.opt.num_D
+            for i in range(self.opt.num_D):
+                for j in range(len(pred_fake[i])-1):
+                    tmp = self.criterionFeat(pred_fake[i][j], pred_real[i][j].detach()) * self.opt.lambda_feat
+                    loss_G_GAN_Feat += D_weights * feat_weights * tmp
+        else:
+            loss_G_GAN_Feat = torch.zeros(1).to(label.device)
+                   
+        # VGG feature matching loss
+        loss_G_VGG = 0
+        if not self.opt.no_vgg_loss:
+            loss_G_VGG = self.criterionVGG(fake_image, real_image) * self.opt.lambda_feat if pair else torch.zeros(1).to(label.device)
+
+        smooth_l1_loss=0
+        if self.opt.Smooth_L1:
+            smooth_l1_loss=self.criterionImage(fake_image,real_image)*self.opt.L1_weight
+
+
+        return [ self.loss_filter(loss_feat_l2, loss_G_GAN, loss_G_GAN_Feat, loss_G_VGG, loss_D_real, loss_D_fake,smooth_l1_loss,loss_feat_l2_stage_1), None if not infer else fake_image ]
+
 
     def inference(self, label, inst):
 
