@@ -2,7 +2,7 @@ import os
 import argparse
 from PIL import Image , ImageFilter
 
-def blackndwhite(input_folder,output_folder):
+def edgeenhance(input_folder,output_folder):
     """ A program to apply filters on Output Images
     Parameters:
     --input_folder (str): Input Image folder location
@@ -35,4 +35,4 @@ if __name__ == "__main__":
         os.makedirs(opts.output_folder)
     input_folder = opts.input_folder
     output_folder = opts.output_folder
-    blackndwhite(input_folder,output_folder)
+    edgeenhance(input_folder,output_folder)
