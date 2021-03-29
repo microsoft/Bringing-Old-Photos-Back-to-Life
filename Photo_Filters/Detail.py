@@ -1,6 +1,6 @@
 import os
 import argparse
-from PIL import Image 
+from PIL import Image , ImageFilter
 
 def blackndwhite(input_folder,output_folder):
     """ A program to apply filters on Output Images
@@ -14,9 +14,9 @@ def blackndwhite(input_folder,output_folder):
         # opening image from input folder
         image_file = Image.open(opts.input_folder +'/'+ image)
         # converting image to black and white
-        image_file = image_file.convert('1')
+        image_file = image_file.filter(ImageFilter.DETAIL)
         # saving image to output folder
-        image_file.save(opts.output_folder + '/' + 'result.png')
+        image_file.save(opts.output_folder + '/' + 'detail.png')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
