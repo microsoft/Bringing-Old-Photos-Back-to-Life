@@ -20,6 +20,8 @@
 ## Notes of this project
 The code originates from our research project and the aim is to demonstrate the research idea, so we have not optimized it from a product perspective. And we will spend time to address some common issues, such as out of memory issue, limited resolution, but will not involve too much in engineering problems, such as speedup of the inference, fastapi deployment and so on. We welcome volunteers to contribute to this project to make it more usable for practical application.
 
+**We are improving the algorithm so as to process high resolution photos. It takes time and please stay tuned.**
+
 ## New
 You can now play with our [Colab](https://colab.research.google.com/drive/1NEm6AsybIiC5TwTU_4DqDkQO0nFRB-uA?usp=sharing) and try it on your photos. 
 
