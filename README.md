@@ -22,7 +22,9 @@ The code originates from our research project and the aim is to demonstrate the 
 
 **We are improving the algorithm so as to process high resolution photos. It takes time and please stay tuned.**
 
-## New
+## News
+Training code is available and welcome to have a try and learn the training details. 
+
 You can now play with our [Colab](https://colab.research.google.com/drive/1NEm6AsybIiC5TwTU_4DqDkQO0nFRB-uA?usp=sharing) and try it on your photos. 
 
 ## Requirement
