@@ -3,7 +3,7 @@ import numpy as np
 import os
 import argparse 
 
-def detail(input_folder,output_folder):
+def tv(input_folder,output_folder):
     """ A program to apply filters on Output Images
     Parameters:
     --input_folder (str): Input Image folder location
@@ -16,9 +16,19 @@ def detail(input_folder,output_folder):
         # image_file = Image.open(opts.input_folder +'/'+ x)
         image_file = cv2.imread(opts.input_folder +'/'+ image)
         # converting image to black and white
-        dst = cv2.detailEnhance(image_file, sigma_s=10, sigma_r=0.15)
+        height, width = image_file.shape[:2]
+        gray = cv2.cvtColor(image_file, cv2.COLOR_BGR2GRAY)
+        thresh = 0.8 # creating threshold. This means noise will be added to 80% pixels
+        for i in range(height):
+            for j in range(width):
+                if np.random.rand() <= thresh:
+                    if np.random.randint(2) == 0:
+                        gray[i, j] = min(gray[i, j] + np.random.randint(0, 64), 255) # adding random value between 0 to 64. Anything above 255 is set to 255.
+                    else:
+                        gray[i, j] = max(gray[i, j] - np.random.randint(0, 64), 0) # subtracting random values between 0 to 64. Anything below 0 is set to 0.
+
         # saving image to output folder
-        cv2.imwrite(str(opts.output_folder + '/' + 'detail.png'), dst)
+        cv2.imwrite(str(opts.output_folder + '/' + '60sTv.png'), gray)
         cv2.waitKey(0)
 
 if __name__ == "__main__":
@@ -38,5 +48,5 @@ if __name__ == "__main__":
         os.makedirs(opts.output_folder)
     input_folder = opts.input_folder
     output_folder = opts.output_folder
-    detail(input_folder,output_folder)
+    tv(input_folder,output_folder)
     

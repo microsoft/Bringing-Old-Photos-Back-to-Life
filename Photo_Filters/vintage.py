@@ -3,7 +3,7 @@ import numpy as np
 import os
 import argparse 
 
-def detail(input_folder,output_folder):
+def vintage(input_folder,output_folder):
     """ A program to apply filters on Output Images
     Parameters:
     --input_folder (str): Input Image folder location
@@ -16,9 +16,18 @@ def detail(input_folder,output_folder):
         # image_file = Image.open(opts.input_folder +'/'+ x)
         image_file = cv2.imread(opts.input_folder +'/'+ image)
         # converting image to black and white
-        dst = cv2.detailEnhance(image_file, sigma_s=10, sigma_r=0.15)
+        rows, cols = image_file.shape[:2]
+        # Create a Gaussian filter
+        kernel_x = cv2.getGaussianKernel(cols,200)
+        kernel_y = cv2.getGaussianKernel(rows,200)
+        kernel = kernel_y * kernel_x.T
+        filter = 255 * kernel / np.linalg.norm(kernel)
+        vintage_im = np.copy(image_file)
+        # for each channel in the input image, we will apply the above filter
+        for i in range(3):
+            vintage_im[:,:,i] = vintage_im[:,:,i] * filter
         # saving image to output folder
-        cv2.imwrite(str(opts.output_folder + '/' + 'detail.png'), dst)
+        cv2.imwrite(str(opts.output_folder + '/' + 'vintage.png'), vintage_im)
         cv2.waitKey(0)
 
 if __name__ == "__main__":
@@ -38,5 +47,5 @@ if __name__ == "__main__":
         os.makedirs(opts.output_folder)
     input_folder = opts.input_folder
     output_folder = opts.output_folder
-    detail(input_folder,output_folder)
+    vintage(input_folder,output_folder)
     

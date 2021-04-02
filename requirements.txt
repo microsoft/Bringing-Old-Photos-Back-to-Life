@@ -10,4 +10,3 @@ tensorboardX
 scipy
 opencv-python
 einops
-Pillow

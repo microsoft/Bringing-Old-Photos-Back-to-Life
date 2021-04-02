@@ -1,8 +1,9 @@
+import cv2
+import numpy as np
 import os
-import argparse
-from PIL import Image , ImageFilter
+import argparse 
 
-def edgeenhance(input_folder,output_folder):
+def invert(input_folder,output_folder):
     """ A program to apply filters on Output Images
     Parameters:
     --input_folder (str): Input Image folder location
@@ -12,11 +13,13 @@ def edgeenhance(input_folder,output_folder):
     images = os.listdir(opts.input_folder)
     for image in images:
         # opening image from input folder
-        image_file = Image.open(opts.input_folder +'/'+ image)
+        # image_file = Image.open(opts.input_folder +'/'+ x)
+        image_file = cv2.imread(opts.input_folder +'/'+ image)
         # converting image to black and white
-        image_file = image_file.filter(ImageFilter.EDGE_ENHANCE)
+        res = cv2.bitwise_not(image_file)
         # saving image to output folder
-        image_file.save(opts.output_folder + '/' + 'edge_enhance.png')
+        cv2.imwrite(str(opts.output_folder + '/' + 'invert.png'), res)
+        cv2.waitKey(0)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -24,7 +27,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output_folder",
         type=str,
-        default="./output",
+        default="./filtered_image",
         help="Restored images, please use the absolute path",
     )
     opts = parser.parse_args()
@@ -35,4 +38,5 @@ if __name__ == "__main__":
         os.makedirs(opts.output_folder)
     input_folder = opts.input_folder
     output_folder = opts.output_folder
-    edgeenhance(input_folder,output_folder)
+    invert(input_folder,output_folder)
+    

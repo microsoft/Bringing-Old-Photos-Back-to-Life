@@ -3,7 +3,7 @@ import numpy as np
 import os
 import argparse 
 
-def detail(input_folder,output_folder):
+def brightness(input_folder,output_folder):
     """ A program to apply filters on Output Images
     Parameters:
     --input_folder (str): Input Image folder location
@@ -16,9 +16,16 @@ def detail(input_folder,output_folder):
         # image_file = Image.open(opts.input_folder +'/'+ x)
         image_file = cv2.imread(opts.input_folder +'/'+ image)
         # converting image to black and white
-        dst = cv2.detailEnhance(image_file, sigma_s=10, sigma_r=0.15)
+        hsv = cv2.cvtColor(image_file, cv2.COLOR_BGR2HSV) # convert image to HSV color space
+        hsv = np.array(hsv, dtype = np.float64)
+        hsv[:,:,1] = hsv[:,:,1]*1.25 # scale pixel values up for channel 1
+        hsv[:,:,1][hsv[:,:,1]>255]  = 255
+        hsv[:,:,2] = hsv[:,:,2]*1.25 # scale pixel values up for channel 2
+        hsv[:,:,2][hsv[:,:,2]>255]  = 255
+        hsv = np.array(hsv, dtype = np.uint8)
+        img = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
         # saving image to output folder
-        cv2.imwrite(str(opts.output_folder + '/' + 'detail.png'), dst)
+        cv2.imwrite(str(opts.output_folder + '/' + 'bright.png'), img)
         cv2.waitKey(0)
 
 if __name__ == "__main__":
@@ -38,5 +45,4 @@ if __name__ == "__main__":
         os.makedirs(opts.output_folder)
     input_folder = opts.input_folder
     output_folder = opts.output_folder
-    detail(input_folder,output_folder)
-    
+    brightness(input_folder,output_folder)

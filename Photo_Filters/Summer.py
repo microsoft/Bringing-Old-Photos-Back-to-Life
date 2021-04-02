@@ -3,7 +3,14 @@ import numpy as np
 import os
 import argparse 
 
-def detail(input_folder,output_folder):
+def gamma_function(channel, gamma):
+    invGamma = 1/gamma
+    table = np.array([((i / 255.0) ** invGamma) * 255
+                      for i in np.arange(0, 256)]).astype("uint8") #creating lookup table
+    channel = cv2.LUT(channel, table)
+    return channel
+    
+def summer(input_folder,output_folder):
     """ A program to apply filters on Output Images
     Parameters:
     --input_folder (str): Input Image folder location
@@ -16,9 +23,13 @@ def detail(input_folder,output_folder):
         # image_file = Image.open(opts.input_folder +'/'+ x)
         image_file = cv2.imread(opts.input_folder +'/'+ image)
         # converting image to black and white
-        dst = cv2.detailEnhance(image_file, sigma_s=10, sigma_r=0.15)
+        image_file[:, :, 0] = gamma_function(image_file[:, :, 0], 0.75) # down scaling blue channel
+        image_file[:, :, 2] = gamma_function(image_file[:, :, 2], 1.25) # up scaling red channel
+        hsv = cv2.cvtColor(image_file, cv2.COLOR_BGR2HSV)
+        hsv[:, :, 1] = gamma_function(hsv[:, :, 1], 1.2) # up scaling saturation channel
+        image_file = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
         # saving image to output folder
-        cv2.imwrite(str(opts.output_folder + '/' + 'detail.png'), dst)
+        cv2.imwrite(str(opts.output_folder + '/' + 'summer.png'), image_file)
         cv2.waitKey(0)
 
 if __name__ == "__main__":
@@ -38,5 +49,5 @@ if __name__ == "__main__":
         os.makedirs(opts.output_folder)
     input_folder = opts.input_folder
     output_folder = opts.output_folder
-    detail(input_folder,output_folder)
+    summer(input_folder,output_folder)
     
