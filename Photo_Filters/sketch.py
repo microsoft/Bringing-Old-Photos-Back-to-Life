@@ -16,9 +16,31 @@ def sketch(input_folder,output_folder):
         # image_file = Image.open(opts.input_folder +'/'+ x)
         image_file = cv2.imread(opts.input_folder +'/'+ image)
         # converting image to black and white
-        dst_gray = cv2.pencilSketch(image_file, sigma_s=60, sigma_r=0.07, shade_factor=0.05) # inbuilt function to generate pencil sketch in both color and grayscale
+        scale_percent = 0.60
+
+        width = int(image_file.shape[1]*scale_percent)
+        height = int(image_file.shape[0]*scale_percent)
+
+        dim = (width,height)
+        resized = cv2.resize(image_file,dim,interpolation = cv2.INTER_AREA)
+
+        kernel_sharpening = np.array([[-1,-1,-1], 
+                                    [-1, 9,-1],
+                                    [-1,-1,-1]])
+        sharpened = cv2.filter2D(resized,-1,kernel_sharpening)
+
+
+
+        gray = cv2.cvtColor(sharpened , cv2.COLOR_BGR2GRAY)
+        inv = 255-gray
+        gauss = cv2.GaussianBlur(inv,ksize=(15,15),sigmaX=0,sigmaY=0)
+
+        def dodgeV2(image,mask):
+            return cv2.divide(image,255-mask,scale=256)
+
+        pencil_jc = dodgeV2(gray,gauss)
         # saving image to output folder
-        cv2.imwrite(str(opts.output_folder + '/' + 'sketch.png'), dst_gray)
+        cv2.imwrite(str(opts.output_folder + '/' + 'sketch.png'), pencil_jc)
         cv2.waitKey(0)
 
 if __name__ == "__main__":
