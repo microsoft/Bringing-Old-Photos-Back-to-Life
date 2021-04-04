@@ -20,11 +20,19 @@ class FaceTestDataset(BaseDataset):
         #    parser.set_defaults(no_instance=True)
         return parser
 
-    def initialize(self, opt):
-        self.opt = opt
+    def initialize(self, dataroot, old_face_folder, old_face_label_folder, load_size, preprocess_mode, 
+                    crop_size, no_flip, aspect_ratio):
+        # self.opt = opt
+        self.aspect_ratio = aspect_ratio
+        self.no_flip = no_flip
+        self.preprocess_mode = preprocess_mode
+        self.crop_size = crop_size
+        self.dataroot = dataroot
+        self.load_size = load_size
+        self.old_face_folder = old_face_folder
 
-        image_path = os.path.join(opt.dataroot, opt.old_face_folder)
-        label_path = os.path.join(opt.dataroot, opt.old_face_label_folder)
+        image_path = os.path.join(dataroot, old_face_folder)
+        label_path = os.path.join(dataroot, old_face_label_folder)
 
         image_list = os.listdir(image_path)
         image_list = sorted(image_list)
@@ -59,17 +67,21 @@ class FaceTestDataset(BaseDataset):
 
     def __getitem__(self, index):
 
-        params = get_params(self.opt, (-1, -1))
+        # get_params(preprocess_mode, load_size, crop_size, size)
+        params = get_params(self.preprocess_mode, self.load_size, self.crop_size, (-1, -1))
         image_name = self.image_paths[index]
-        image_path = os.path.join(self.opt.dataroot, self.opt.old_face_folder, image_name)
+        image_path = os.path.join(self.dataroot, self.old_face_folder, image_name)
         image = Image.open(image_path)
         image = image.convert("RGB")
 
-        transform_image = get_transform(self.opt, params)
+        transform_image = get_transform(self.preprocess_mode, self.load_size, self.crop_size, 
+                                        self.aspect_ratio, self.no_flip, self.isTrain, params)
         image_tensor = transform_image(image)
 
         img_name = image_name[:-4]
-        transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
+
+        transform_label = get_transform(self.preprocess_mode, self.load_size, self.crop_size, self.aspect_ratio,
+                                     self.no_flip, self.isTrain, params, method=Image.NEAREST, normalize=False)
         full_label = []
 
         cnt = 0
@@ -83,7 +95,7 @@ class FaceTestDataset(BaseDataset):
                 label_tensor = transform_label(label)  ## 3 channels and pixel [0,1]
                 full_label.append(label_tensor[0])
             else:
-                current_part = torch.zeros((self.opt.load_size, self.opt.load_size))
+                current_part = torch.zeros((self.load_size, self.load_size))
                 full_label.append(current_part)
                 cnt += 1
 

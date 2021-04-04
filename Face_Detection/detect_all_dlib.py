@@ -127,26 +127,16 @@ def affine2theta(affine, input_w, input_h, target_w, target_h):
     return theta
 
 
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--url", type=str, default="/home/jingliao/ziyuwan/celebrities", help="input")
-    parser.add_argument(
-        "--save_url", type=str, default="/home/jingliao/ziyuwan/celebrities_detected_face_reid", help="output"
-    )
-    opts = parser.parse_args()
-
-    url = opts.url
-    save_url = opts.save_url
-
+def detect_all_dlib(url="/home/jingliao/ziyuwan/celebrities", save_url="/home/jingliao/ziyuwan/celebrities_detected_face_reid"):
+    
     ### If the origin url is None, then we don't need to reid the origin image
-
+    
     os.makedirs(url, exist_ok=True)
     os.makedirs(save_url, exist_ok=True)
 
     face_detector = dlib.get_frontal_face_detector()
     landmark_locator = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
-
+    
     count = 0
 
     map_id = {}
@@ -181,4 +171,61 @@ if __name__ == "__main__":
 
         if count % 1000 == 0:
             print("%d have finished ..." % (count))
+
+
+
+# if __name__ == "__main__":
+
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument("--url", type=str, default="/home/jingliao/ziyuwan/celebrities", help="input")
+#     parser.add_argument(
+#         "--save_url", type=str, default="/home/jingliao/ziyuwan/celebrities_detected_face_reid", help="output"
+#     )
+#     opts = parser.parse_args()
+
+#     url = opts.url
+#     save_url = opts.save_url
+
+#     ### If the origin url is None, then we don't need to reid the origin image
+
+#     os.makedirs(url, exist_ok=True)
+#     os.makedirs(save_url, exist_ok=True)
+
+#     face_detector = dlib.get_frontal_face_detector()
+#     landmark_locator = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+
+#     count = 0
+
+#     map_id = {}
+#     for x in os.listdir(url):
+#         img_url = os.path.join(url, x)
+#         pil_img = Image.open(img_url).convert("RGB")
+
+#         image = np.array(pil_img)
+
+#         start = time.time()
+#         faces = face_detector(image)
+#         done = time.time()
+
+#         if len(faces) == 0:
+#             print("Warning: There is no face in %s" % (x))
+#             continue
+
+#         print(len(faces))
+
+#         if len(faces) > 0:
+#             for face_id in range(len(faces)):
+#                 current_face = faces[face_id]
+#                 face_landmarks = landmark_locator(image, current_face)
+#                 current_fl = search(face_landmarks)
+
+#                 affine = compute_transformation_matrix(image, current_fl, False, target_face_scale=1.3)
+#                 aligned_face = warp(image, affine, output_shape=(256, 256, 3))
+#                 img_name = x[:-4] + "_" + str(face_id + 1)
+#                 io.imsave(os.path.join(save_url, img_name + ".png"), img_as_ubyte(aligned_face))
+
+#         count += 1
+
+#         if count % 1000 == 0:
+#             print("%d have finished ..." % (count))
 

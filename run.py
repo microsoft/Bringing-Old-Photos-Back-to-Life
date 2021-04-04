@@ -1,6 +1,8 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+# this is a test
+
 import os
 import argparse
 import shutil
@@ -107,10 +109,14 @@ if __name__ == "__main__":
     stage_2_output_dir = os.path.join(opts.output_folder, "stage_2_detection_output")
     if not os.path.exists(stage_2_output_dir):
         os.makedirs(stage_2_output_dir)
-    stage_2_command = (
-        "python detect_all_dlib.py --url " + stage_2_input_dir + " --save_url " + stage_2_output_dir
-    )
-    run_cmd(stage_2_command)
+    
+    detect_all_dlib(url=stage_2_input_dir, save_url=stage_2_output_dir)
+
+    # stage_2_command = (
+    #     "python detect_all_dlib.py --url " + stage_2_input_dir + " --save_url " + stage_2_output_dir
+    # )
+    # run_cmd(stage_2_command)
+    
     print("Finish Stage 2 ...")
     print("\n")
 
@@ -147,15 +153,17 @@ if __name__ == "__main__":
     stage_4_output_dir = os.path.join(opts.output_folder, "final_output")
     if not os.path.exists(stage_4_output_dir):
         os.makedirs(stage_4_output_dir)
-    stage_4_command = (
-        "python align_warp_back_multiple_dlib.py --origin_url "
-        + stage_4_input_image_dir
-        + " --replace_url "
-        + stage_4_input_face_dir
-        + " --save_url "
-        + stage_4_output_dir
-    )
-    run_cmd(stage_4_command)
+    
+    align_wrap_back_multiple_dlib(origin_url=stage_4_input_image_dir, replace_url=stage_4_input_face_dir, save_url=stage_4_output_dir)
+    # stage_4_command = (
+    #     "python align_warp_back_multiple_dlib.py --origin_url "
+    #     + stage_4_input_image_dir
+    #     + " --replace_url "
+    #     + stage_4_input_face_dir
+    #     + " --save_url "
+    #     + stage_4_output_dir
+    # )
+    # run_cmd(stage_4_command)
     print("Finish Stage 4 ...")
     print("\n")
 

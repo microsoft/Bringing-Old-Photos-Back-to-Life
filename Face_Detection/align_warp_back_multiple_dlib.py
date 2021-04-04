@@ -344,17 +344,7 @@ def search(face_landmarks):
     return results
 
 
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--origin_url", type=str, default="./", help="origin images")
-    parser.add_argument("--replace_url", type=str, default="./", help="restored faces")
-    parser.add_argument("--save_url", type=str, default="./save")
-    opts = parser.parse_args()
-
-    origin_url = opts.origin_url
-    replace_url = opts.replace_url
-    save_url = opts.save_url
+def align_wrap_back_multiple_dlib(origin_url="./", replace_url="./", save_url="./save"):
 
     if not os.path.exists(save_url):
         os.makedirs(save_url)
@@ -434,4 +424,99 @@ if __name__ == "__main__":
 
         if count % 1000 == 0:
             print("%d have finished ..." % (count))
+
+
+
+
+
+# if __name__ == "__main__":
+
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument("--origin_url", type=str, default="./", help="origin images")
+#     parser.add_argument("--replace_url", type=str, default="./", help="restored faces")
+#     parser.add_argument("--save_url", type=str, default="./save")
+#     opts = parser.parse_args()
+
+#     origin_url = opts.origin_url
+#     replace_url = opts.replace_url
+#     save_url = opts.save_url
+
+#     if not os.path.exists(save_url):
+#         os.makedirs(save_url)
+
+#     face_detector = dlib.get_frontal_face_detector()
+#     landmark_locator = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+
+#     count = 0
+
+#     for x in os.listdir(origin_url):
+#         img_url = os.path.join(origin_url, x)
+#         pil_img = Image.open(img_url).convert("RGB")
+
+#         origin_width, origin_height = pil_img.size
+#         image = np.array(pil_img)
+
+#         start = time.time()
+#         faces = face_detector(image)
+#         done = time.time()
+
+#         if len(faces) == 0:
+#             print("Warning: There is no face in %s" % (x))
+#             continue
+
+#         blended = image
+#         for face_id in range(len(faces)):
+
+#             current_face = faces[face_id]
+#             face_landmarks = landmark_locator(image, current_face)
+#             current_fl = search(face_landmarks)
+
+#             forward_mask = np.ones_like(image).astype("uint8")
+#             affine = compute_transformation_matrix(image, current_fl, False, target_face_scale=1.3)
+#             aligned_face = warp(image, affine, output_shape=(256, 256, 3), preserve_range=True)
+#             forward_mask = warp(
+#                 forward_mask, affine, output_shape=(256, 256, 3), order=0, preserve_range=True
+#             )
+
+#             affine_inverse = affine.inverse
+#             cur_face = aligned_face
+#             if replace_url != "":
+
+#                 face_name = x[:-4] + "_" + str(face_id + 1) + ".png"
+#                 cur_url = os.path.join(replace_url, face_name)
+#                 restored_face = Image.open(cur_url).convert("RGB")
+#                 restored_face = np.array(restored_face)
+#                 cur_face = restored_face
+
+#             ## Histogram Color matching
+#             A = cv2.cvtColor(aligned_face.astype("uint8"), cv2.COLOR_RGB2BGR)
+#             B = cv2.cvtColor(cur_face.astype("uint8"), cv2.COLOR_RGB2BGR)
+#             B = match_histograms(B, A)
+#             cur_face = cv2.cvtColor(B.astype("uint8"), cv2.COLOR_BGR2RGB)
+
+#             warped_back = warp(
+#                 cur_face,
+#                 affine_inverse,
+#                 output_shape=(origin_height, origin_width, 3),
+#                 order=3,
+#                 preserve_range=True,
+#             )
+
+#             backward_mask = warp(
+#                 forward_mask,
+#                 affine_inverse,
+#                 output_shape=(origin_height, origin_width, 3),
+#                 order=0,
+#                 preserve_range=True,
+#             )  ## Nearest neighbour
+
+#             blended = blur_blending_cv2(warped_back, blended, backward_mask)
+#             blended *= 255.0
+
+#         io.imsave(os.path.join(save_url, x), img_as_ubyte(blended / 255.0))
+
+#         count += 1
+
+#         if count % 1000 == 0:
+#             print("%d have finished ..." % (count))
 
