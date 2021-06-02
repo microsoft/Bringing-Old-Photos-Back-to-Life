@@ -95,6 +95,8 @@ def main(config):
 
     if config.GPU >= 0:
         model.to(config.GPU)
+    else: 
+        model.cpu()
     model.eval()
 
     ## dataloader and transformation
@@ -140,6 +142,8 @@ def main(config):
 
         if config.GPU >= 0:
             scratch_image_scale = scratch_image_scale.to(config.GPU)
+        else:
+            scratch_image_scale = scratch_image_scale.cpu()
         with torch.no_grad():
             P = torch.sigmoid(model(scratch_image_scale))
 
