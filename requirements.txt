@@ -10,3 +10,4 @@ tensorboardX
 scipy
 opencv-python
 einops
+PySimpleGUI
