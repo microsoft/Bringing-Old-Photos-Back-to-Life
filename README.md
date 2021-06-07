@@ -155,6 +155,20 @@ We use a progressive generator to refine the face regions of old photos. More de
 > 
 > Since the model is pretrained with 256*256 images, the model may not work ideally for arbitrary resolution.
 
+### 5) GUI
+
+A user-friendly GUI which takes input of image by user and shows result in respective window.
+
+#### How it works:
+
+1. Run GUI.py file.
+2. Click browse and select your image from test_images/old_w_scratch folder to remove scratches.
+3. Click Modify Photo button.
+4. Wait for a while and see results on GUI window.
+5. Exit window by clicking Exit Window and get your result image in output folder.
+
+<img src='imgs/gui.PNG'>
+
 ## How to train?
 
 ### 1) Create Training File
