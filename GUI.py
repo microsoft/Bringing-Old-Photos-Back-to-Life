@@ -196,7 +196,7 @@ while True:
             modify(filename)
            
             global f_image
-            f_image = f'C:/Users/user/Desktop/photos_back_to_life/PySimpleGUI-Photo-Colorizer-master/output/final_output/{n3}'
+            f_image = f'./output/final_output/{n3}'
             image = cv2.imread(f_image)
             window['-OUT-'].update(data=cv2.imencode('.png', image)[1].tobytes())
             
