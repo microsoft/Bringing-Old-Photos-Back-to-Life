@@ -25,6 +25,8 @@ class Mapping_Model(nn.Module):
         tmp_nc = 64
         n_up = 4
 
+        print("Mapping: You are using the mapping model without global restoration.")
+
         for i in range(n_up):
             ic = min(tmp_nc * (2 ** i), mc)
             oc = min(tmp_nc * (2 ** (i + 1)), mc)
@@ -103,12 +105,20 @@ class Pix2PixHDModel_Mapping(BaseModel):
         )
 
         if opt.non_local == "Setting_42" or opt.NL_use_mask:
-            self.mapping_net = Mapping_Model_with_mask(
-                min(opt.ngf * 2 ** opt.n_downsample_global, opt.mc),
-                opt.map_mc,
-                n_blocks=opt.mapping_n_block,
-                opt=opt,
-            )
+            if opt.mapping_exp==1:
+                self.mapping_net = Mapping_Model_with_mask_2(
+                    min(opt.ngf * 2 ** opt.n_downsample_global, opt.mc),
+                    opt.map_mc,
+                    n_blocks=opt.mapping_n_block,
+                    opt=opt,
+                )
+            else:
+                self.mapping_net = Mapping_Model_with_mask(
+                    min(opt.ngf * 2 ** opt.n_downsample_global, opt.mc),
+                    opt.map_mc,
+                    n_blocks=opt.mapping_n_block,
+                    opt=opt,
+                )
         else:
             self.mapping_net = Mapping_Model(
                 min(opt.ngf * 2 ** opt.n_downsample_global, opt.mc),
@@ -247,7 +257,7 @@ class Pix2PixHDModel_Mapping(BaseModel):
         # print(label_feat.min(), label_feat.max(), label_feat.mean())
         #label_feat = label_feat / 16.0
 
-        if self.opt.NL_use_mask:
+        if self.opt.NL_use_mask: 
             label_feat_map=self.mapping_net(label_feat.detach(),inst)
         else:
             label_feat_map = self.mapping_net(label_feat.detach())
@@ -325,7 +335,10 @@ class Pix2PixHDModel_Mapping(BaseModel):
         label_feat = self.netG_A.forward(input_concat, flow="enc")
 
         if self.opt.NL_use_mask:
-            label_feat_map = self.mapping_net(label_feat.detach(), inst_data)
+            if self.opt.inference_optimize:
+                label_feat_map=self.mapping_net.inference_forward(label_feat.detach(),inst_data)
+            else:   
+                label_feat_map = self.mapping_net(label_feat.detach(), inst_data)
         else:
             label_feat_map = self.mapping_net(label_feat.detach())
 

@@ -156,7 +156,8 @@ if __name__ == "__main__":
         ### Necessary input
 
         try:
-            generated = model.inference(input, mask)
+            with torch.no_grad():
+                generated = model.inference(input, mask)
         except Exception as ex:
             print("Skip %s due to an error:\n%s" % (input_name, str(ex)))
             continue

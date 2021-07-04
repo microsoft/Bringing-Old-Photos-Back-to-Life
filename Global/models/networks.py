@@ -618,6 +618,163 @@ class NLayerDiscriminator(nn.Module):
 
 
 
+class Patch_Attention_4(nn.Module):  ## While combine the feature map, use conv and mask
+    def __init__(self, in_channels, inter_channels, patch_size):
+        super(Patch_Attention_4, self).__init__()
+
+        self.patch_size=patch_size
+
+
+        # self.g = nn.Conv2d(
+        #     in_channels=self.in_channels, out_channels=self.inter_channels, kernel_size=1, stride=1, padding=0
+        # )
+
+        # self.W = nn.Conv2d(
+        #     in_channels=self.inter_channels, out_channels=self.in_channels, kernel_size=1, stride=1, padding=0
+        # )
+        # # for pytorch 0.3.1
+        # # nn.init.constant(self.W.weight, 0)
+        # # nn.init.constant(self.W.bias, 0)
+        # # for pytorch 0.4.0
+        # nn.init.constant_(self.W.weight, 0)
+        # nn.init.constant_(self.W.bias, 0)
+        # self.theta = nn.Conv2d(
+        #     in_channels=self.in_channels, out_channels=self.inter_channels, kernel_size=1, stride=1, padding=0
+        # )
+
+        # self.phi = nn.Conv2d(
+        #     in_channels=self.in_channels, out_channels=self.inter_channels, kernel_size=1, stride=1, padding=0
+        # )
+
+        self.F_Combine=nn.Conv2d(in_channels=1025,out_channels=512,kernel_size=3,stride=1,padding=1,bias=True)
+        norm_layer = get_norm_layer(norm_type="instance")
+        activation = nn.ReLU(True)
+
+        model = []
+        for i in range(1):
+            model += [
+                ResnetBlock(
+                    inter_channels,
+                    padding_type="reflect",
+                    activation=activation,
+                    norm_layer=norm_layer,
+                    opt=None,
+                )
+            ]
+        self.res_block = nn.Sequential(*model)
+
+    def Hard_Compose(self, input, dim, index):
+        # batch index select
+        # input: [B,C,HW]
+        # dim: scalar > 0
+        # index: [B, HW]
+        views = [input.size(0)] + [1 if i!=dim else -1 for i in range(1, len(input.size()))]
+        expanse = list(input.size())
+        expanse[0] = -1
+        expanse[dim] = -1
+        index = index.view(views).expand(expanse)
+        return torch.gather(input, dim, index)
+
+    def forward(self, z, mask):  ## The shape of mask is Batch*1*H*W
+
+        x=self.res_block(z)
+
+        b,c,h,w=x.shape
+
+        ## mask resize + dilation
+        # tmp = 1 - mask
+        mask = F.interpolate(mask, (x.size(2), x.size(3)), mode="bilinear")
+        mask[mask > 0] = 1.0
+
+        # mask = 1 - mask
+        # tmp = F.interpolate(tmp, (x.size(2), x.size(3)))
+        # mask *= tmp
+        # mask=1-mask
+        ## 1: mask position 0: non-mask
+
+        mask_unfold=F.unfold(mask, kernel_size=(self.patch_size,self.patch_size), padding=0, stride=self.patch_size)
+        non_mask_region=(torch.mean(mask_unfold,dim=1,keepdim=True)>0.6).float()
+        all_patch_num=h*w/self.patch_size/self.patch_size
+        non_mask_region=non_mask_region.repeat(1,int(all_patch_num),1)
+
+        x_unfold=F.unfold(x, kernel_size=(self.patch_size,self.patch_size), padding=0, stride=self.patch_size)
+        y_unfold=x_unfold.permute(0,2,1)
+        x_unfold_normalized=F.normalize(x_unfold,dim=1)
+        y_unfold_normalized=F.normalize(y_unfold,dim=2)
+        correlation_matrix=torch.bmm(y_unfold_normalized,x_unfold_normalized)
+        correlation_matrix=correlation_matrix.masked_fill(non_mask_region==1.,-1e9)
+        correlation_matrix=F.softmax(correlation_matrix,dim=2)
+
+        # print(correlation_matrix)
+
+        R, max_arg=torch.max(correlation_matrix,dim=2)
+
+        composed_unfold=self.Hard_Compose(x_unfold, 2, max_arg)
+        composed_fold=F.fold(composed_unfold,output_size=(h,w),kernel_size=(self.patch_size,self.patch_size),padding=0,stride=self.patch_size)
+
+        concat_1=torch.cat((z,composed_fold,mask),dim=1)
+        concat_1=self.F_Combine(concat_1)
+
+        return concat_1
+
+    def inference_forward(self,z,mask): ## Reduce the extra memory cost
+
+
+        x=self.res_block(z)
+
+        b,c,h,w=x.shape
+
+        ## mask resize + dilation
+        # tmp = 1 - mask
+        mask = F.interpolate(mask, (x.size(2), x.size(3)), mode="bilinear")
+        mask[mask > 0] = 1.0
+        # mask = 1 - mask
+        # tmp = F.interpolate(tmp, (x.size(2), x.size(3)))
+        # mask *= tmp
+        # mask=1-mask
+        ## 1: mask position 0: non-mask
+
+        mask_unfold=F.unfold(mask, kernel_size=(self.patch_size,self.patch_size), padding=0, stride=self.patch_size)
+        non_mask_region=(torch.mean(mask_unfold,dim=1,keepdim=True)>0.6).float()[0,0,:] # 1*1*all_patch_num
+
+        all_patch_num=h*w/self.patch_size/self.patch_size
+
+        mask_index=torch.nonzero(non_mask_region,as_tuple=True)[0]
+
+
+        if len(mask_index)==0: ## No mask patch is selected, no attention is needed
+
+            composed_fold=x
+
+        else:
+
+            unmask_index=torch.nonzero(non_mask_region!=1,as_tuple=True)[0]
+
+            x_unfold=F.unfold(x, kernel_size=(self.patch_size,self.patch_size), padding=0, stride=self.patch_size)
+            
+            Query_Patch=torch.index_select(x_unfold,2,mask_index)
+            Key_Patch=torch.index_select(x_unfold,2,unmask_index)
+
+            Query_Patch=Query_Patch.permute(0,2,1)        
+            Query_Patch_normalized=F.normalize(Query_Patch,dim=2)
+            Key_Patch_normalized=F.normalize(Key_Patch,dim=1)
+
+            correlation_matrix=torch.bmm(Query_Patch_normalized,Key_Patch_normalized)
+            correlation_matrix=F.softmax(correlation_matrix,dim=2)
+
+
+            R, max_arg=torch.max(correlation_matrix,dim=2)
+
+            composed_unfold=self.Hard_Compose(Key_Patch, 2, max_arg)
+            x_unfold[:,:,mask_index]=composed_unfold
+            composed_fold=F.fold(x_unfold,output_size=(h,w),kernel_size=(self.patch_size,self.patch_size),padding=0,stride=self.patch_size)
+
+        concat_1=torch.cat((z,composed_fold,mask),dim=1)
+        concat_1=self.F_Combine(concat_1)
+
+
+        return concat_1
+
 ##############################################################################
 # Losses
 ##############################################################################
