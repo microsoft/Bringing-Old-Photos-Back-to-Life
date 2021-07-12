@@ -19,10 +19,9 @@
 
 ## Notes of this project
 The code originates from our research project and the aim is to demonstrate the research idea, so we have not optimized it from a product perspective. And we will spend time to address some common issues, such as out of memory issue, limited resolution, but will not involve too much in engineering problems, such as speedup of the inference, fastapi deployment and so on. **We welcome volunteers to contribute to this project to make it more usable for practical application.**
+~~We are improving the algorithm so as to process high resolution photos. It takes time and please stay tuned.~~
 
-**We are improving the algorithm so as to process high resolution photos. It takes time and please stay tuned.**
-
-## News
+## :sparkles: News
 The framework now supports the restoration of high-resolution input.
 
 <img src='imgs/HR.png'>
@@ -80,7 +79,7 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-## How to use?
+## :rocket: How to use?
 
 **Note**: GPU can be set 0 or 0,1,2 or 0,2; use -1 for CPU
 
