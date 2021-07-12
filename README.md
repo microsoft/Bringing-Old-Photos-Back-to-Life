@@ -23,6 +23,10 @@ The code originates from our research project and the aim is to demonstrate the 
 **We are improving the algorithm so as to process high resolution photos. It takes time and please stay tuned.**
 
 ## News
+The framework now supports the restoration of high-resolution input.
+
+<img src='imgs/HR.png'>
+
 Training code is available and welcome to have a try and learn the training details. 
 
 You can now play with our [Colab](https://colab.research.google.com/drive/1NEm6AsybIiC5TwTU_4DqDkQO0nFRB-uA?usp=sharing) and try it on your photos. 
@@ -101,6 +105,16 @@ python run.py --input_folder [test_image_folder_path] \
               --with_scratch
 ```
 
+For high-resolution images with scratches:
+
+```
+python run.py --input_folder [test_image_folder_path] \
+              --output_folder [output_path] \
+              --GPU 0 \
+              --with_scratch \
+              --HR
+```
+
 Note: Please try to use the absolute path. The final results will be saved in `./output_path/final_output/`. You could also check the produced results of different steps in `output_path`.
 
 ### 2) Scratch Detection
@@ -132,8 +146,8 @@ python test.py --Scratch_and_Quality_restore \
                --outputs_dir [output_path]
 
 python test.py --Quality_restore \
- --test_input [test_image_folder_path] \
- --outputs_dir [output_path]
+               --test_input [test_image_folder_path] \
+               --outputs_dir [output_path]
 ```
 
 <img src='imgs/global.png'>
@@ -203,14 +217,17 @@ Traing the mapping with scraches:
 python train_mapping.py --no_TTUR --NL_res --random_hole --use_SN --correlation_renormalize --training_dataset mapping --NL_use_mask --NL_fusion_method combine --non_local Setting_42 --use_v2_degradation --use_vae_which_epoch 200 --continue_train --name mapping_scratch --label_nc 0 --loadSize 256 --fineSize 256 --dataroot [your_data_folder] --no_instance --resize_or_crop crop_only --batchSize 36 --no_html --gpu_ids 0,1,2,3 --nThreads 8 --load_pretrainA [ckpt_of_domainA_SR_old_photos] --load_pretrainB [ckpt_of_domainB_old_photos] --l2_feat 60 --n_downsample_global 3 --mc 64 --k_size 4 --start_r 1 --mapping_n_block 6 --map_mc 512 --use_l1_feat --niter 150 --niter_decay 100 --outputs_dir [your_output_folder] --checkpoints_dir [your_ckpt_folder] --irregular_mask [absolute_path_of_mask_file]
 ```
 
-
+Traing the mapping with scraches (Multi-Scale Patch Attention for HR input):
+```
+python train_mapping.py --no_TTUR --NL_res --random_hole --use_SN --correlation_renormalize --training_dataset mapping --NL_use_mask --NL_fusion_method combine --non_local Setting_42 --use_v2_degradation --use_vae_which_epoch 200 --continue_train --name mapping_Pathc_Attention --label_nc 0 --loadSize 256 --fineSize 256 --dataroot [your_data_folder] --no_instance --resize_or_crop crop_only --batchSize 36 --no_html --gpu_ids 0,1,2,3 --nThreads 8 --load_pretrainA [ckpt_of_domainA_SR_old_photos] --load_pretrainB [ckpt_of_domainB_old_photos] --l2_feat 60 --n_downsample_global 3 --mc 64 --k_size 4 --start_r 1 --mapping_n_block 6 --map_mc 512 --use_l1_feat --niter 150 --niter_decay 100 --outputs_dir [your_output_folder] --checkpoints_dir [your_ckpt_folder] --irregular_mask [absolute_path_of_mask_file] --mapping_exp 1
+```
 
 ## To Do
 - [x] Clean testing code
 - [x] Release pretrained model
 - [x] Collab demo
-- [ ] Replace face detection module (dlib) with RetinaFace
 - [x] Release training code
+- [x] Processing of high-resolution input
 
 
 ## Citation

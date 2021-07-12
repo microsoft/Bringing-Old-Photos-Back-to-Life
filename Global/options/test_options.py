@@ -97,4 +97,4 @@ class TestOptions(BaseOptions):
         self.parser.add_argument(
             "--Scratch_and_Quality_restore", action="store_true", help="For scratched images"
         )
-
+        self.parser.add_argument("--HR", action='store_true',help='Large input size with scratches')

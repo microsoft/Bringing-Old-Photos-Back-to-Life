@@ -97,7 +97,7 @@ class SPADEGenerator(BaseNetwork):
         else:
             raise ValueError("opt.num_upsampling_layers [%s] not recognized" % opt.num_upsampling_layers)
 
-        sw = opt.crop_size // (2 ** num_up_layers)
+        sw = opt.load_size // (2 ** num_up_layers)
         sh = round(sw / opt.aspect_ratio)
 
         return sw, sh
