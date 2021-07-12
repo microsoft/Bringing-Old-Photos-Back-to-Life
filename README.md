@@ -17,9 +17,8 @@
 [Fang Wen](https://www.microsoft.com/en-us/research/people/fangwen/)<sup>2</sup> <br>
 <sup>1</sup>City University of Hong Kong, <sup>2</sup>Microsoft Research Asia, <sup>3</sup>Microsoft Cloud AI, <sup>4</sup>USTC
 
-## Notes of this project
-The code originates from our research project and the aim is to demonstrate the research idea, so we have not optimized it from a product perspective. And we will spend time to address some common issues, such as out of memory issue, limited resolution, but will not involve too much in engineering problems, such as speedup of the inference, fastapi deployment and so on. **We welcome volunteers to contribute to this project to make it more usable for practical application.**
-~~We are improving the algorithm so as to process high resolution photos. It takes time and please stay tuned.~~
+<!-- ## Notes of this project
+The code originates from our research project and the aim is to demonstrate the research idea, so we have not optimized it from a product perspective. And we will spend time to address some common issues, such as out of memory issue, limited resolution, but will not involve too much in engineering problems, such as speedup of the inference, fastapi deployment and so on. **We welcome volunteers to contribute to this project to make it more usable for practical application.** -->
 
 ## :sparkles: News
 The framework now supports the restoration of high-resolution input.
@@ -104,7 +103,7 @@ python run.py --input_folder [test_image_folder_path] \
               --with_scratch
 ```
 
-For high-resolution images with scratches:
+**For high-resolution images with scratches**:
 
 ```
 python run.py --input_folder [test_image_folder_path] \
@@ -220,13 +219,6 @@ Traing the mapping with scraches (Multi-Scale Patch Attention for HR input):
 ```
 python train_mapping.py --no_TTUR --NL_res --random_hole --use_SN --correlation_renormalize --training_dataset mapping --NL_use_mask --NL_fusion_method combine --non_local Setting_42 --use_v2_degradation --use_vae_which_epoch 200 --continue_train --name mapping_Pathc_Attention --label_nc 0 --loadSize 256 --fineSize 256 --dataroot [your_data_folder] --no_instance --resize_or_crop crop_only --batchSize 36 --no_html --gpu_ids 0,1,2,3 --nThreads 8 --load_pretrainA [ckpt_of_domainA_SR_old_photos] --load_pretrainB [ckpt_of_domainB_old_photos] --l2_feat 60 --n_downsample_global 3 --mc 64 --k_size 4 --start_r 1 --mapping_n_block 6 --map_mc 512 --use_l1_feat --niter 150 --niter_decay 100 --outputs_dir [your_output_folder] --checkpoints_dir [your_ckpt_folder] --irregular_mask [absolute_path_of_mask_file] --mapping_exp 1
 ```
-
-## To Do
-- [x] Clean testing code
-- [x] Release pretrained model
-- [x] Collab demo
-- [x] Release training code
-- [x] Processing of high-resolution input
 
 
 ## Citation
