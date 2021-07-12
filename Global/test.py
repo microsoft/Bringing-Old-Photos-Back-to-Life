@@ -14,7 +14,7 @@ import torchvision.utils as vutils
 import torchvision.transforms as transforms
 import torchvision.transforms as transforms
 import numpy as np
-
+import cv2
 
 def data_transforms(img, method=Image.BILINEAR, scale=False):
 
