@@ -23,7 +23,7 @@ The code originates from our research project and the aim is to demonstrate the 
 ## :sparkles: News
 The framework now supports the restoration of high-resolution input.
 
-<img src='imgs/HR.png'>
+<img src='imgs/HR_result.png'>
 
 Training code is available and welcome to have a try and learn the training details. 
 
