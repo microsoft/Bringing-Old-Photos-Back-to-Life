@@ -36,6 +36,7 @@ class Predictor(cog.Predictor):
     @cog.input("HR", type=bool, default=False, help="whether high-resolution image")
     @cog.input("with_scratch", type=bool, default=False, help="whether input image is scratched")
     def predict(self, image, HR=False, with_scratch=False):
+        os.chdir(self.basepath)
         input_path = os.path.join(self.opts.input_folder, os.path.basename(image))
         shutil.copy(str(image), input_path)
 
