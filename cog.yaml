@@ -20,7 +20,7 @@ build:
     - "einops==0.3.0"
     - "PySimpleGUI==4.46.0"
     - "ipython==7.19.0"
-  pre_install:
+  run:
     - pip install dlib
 
 predict: "predict.py:Predictor"
