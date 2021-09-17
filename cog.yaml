@@ -24,6 +24,3 @@ build:
     - pip install dlib
 
 predict: "predict.py:Predictor"
-
-
-
