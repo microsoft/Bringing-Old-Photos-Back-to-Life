@@ -197,16 +197,10 @@ class Predictor(cog.Predictor):
 
         print("All the processing is done. Please check the results.")
 
-        ## This model only outputs png files so make sure to use .png when
-        ## reading the output file. We do that by replacing the extension of the input image
-        ## but keeping it's filename the same
-        img_name = Path(os.path.basename(str(image))).with_suffix('.png')
-
-        output_img_path = os.path.join(self.opts.output_folder, "final_output", img_name)
-
-        print(f'Reading the final output image at path {output_img_path}');
-        
-        image_restore = cv2.imread(output_img_path)
+        img_name = os.path.basename(str(image))
+        image_restore = cv2.imread(
+            os.path.join(self.opts.output_folder, "final_output", img_name)
+        )
 
         out_path = Path(tempfile.mkdtemp()) / "out.png"
 
