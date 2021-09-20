@@ -69,12 +69,12 @@ class Predictor(cog.Predictor):
         if not with_scratch:
 
             stage_1_command = (
-                "python test.py --test_mode Full --Quality_restore --test_input "
-                + stage_1_input_dir
-                + " --outputs_dir "
-                + stage_1_output_dir
-                + " --gpu_ids "
-                + gpu1
+                    "python test.py --test_mode Full --Quality_restore --test_input "
+                    + stage_1_input_dir
+                    + " --outputs_dir "
+                    + stage_1_output_dir
+                    + " --gpu_ids "
+                    + gpu1
             )
             run_cmd(stage_1_command)
         else:
@@ -83,13 +83,13 @@ class Predictor(cog.Predictor):
             new_input = os.path.join(mask_dir, "input")
             new_mask = os.path.join(mask_dir, "mask")
             stage_1_command_1 = (
-                "python detection.py --test_path "
-                + stage_1_input_dir
-                + " --output_dir "
-                + mask_dir
-                + " --input_size full_size"
-                + " --GPU "
-                + gpu1
+                    "python detection.py --test_path "
+                    + stage_1_input_dir
+                    + " --output_dir "
+                    + mask_dir
+                    + " --input_size full_size"
+                    + " --GPU "
+                    + gpu1
             )
 
             if HR:
@@ -98,15 +98,15 @@ class Predictor(cog.Predictor):
                 HR_suffix = ""
 
             stage_1_command_2 = (
-                "python test.py --Scratch_and_Quality_restore --test_input "
-                + new_input
-                + " --test_mask "
-                + new_mask
-                + " --outputs_dir "
-                + stage_1_output_dir
-                + " --gpu_ids "
-                + gpu1
-                + HR_suffix
+                    "python test.py --Scratch_and_Quality_restore --test_input "
+                    + new_input
+                    + " --test_mask "
+                    + new_mask
+                    + " --outputs_dir "
+                    + stage_1_output_dir
+                    + " --gpu_ids "
+                    + gpu1
+                    + HR_suffix
             )
 
             run_cmd(stage_1_command_1)
@@ -134,10 +134,10 @@ class Predictor(cog.Predictor):
         os.makedirs(stage_2_output_dir, exist_ok=True)
 
         stage_2_command = (
-            "python detect_all_dlib_HR.py --url "
-            + stage_2_input_dir
-            + " --save_url "
-            + stage_2_output_dir
+                "python detect_all_dlib_HR.py --url "
+                + stage_2_input_dir
+                + " --save_url "
+                + stage_2_output_dir
         )
 
         run_cmd(stage_2_command)
@@ -157,17 +157,17 @@ class Predictor(cog.Predictor):
 
         self.opts.checkpoint_name = "FaceSR_512"
         stage_3_command = (
-            "python test_face.py --old_face_folder "
-            + stage_3_input_face
-            + " --old_face_label_folder "
-            + stage_3_input_mask
-            + " --tensorboard_log --name "
-            + self.opts.checkpoint_name
-            + " --gpu_ids "
-            + gpu1
-            + " --load_size 512 --label_nc 18 --no_instance --preprocess_mode resize --batchSize 1 --results_dir "
-            + stage_3_output_dir
-            + " --no_parsing_map"
+                "python test_face.py --old_face_folder "
+                + stage_3_input_face
+                + " --old_face_label_folder "
+                + stage_3_input_mask
+                + " --tensorboard_log --name "
+                + self.opts.checkpoint_name
+                + " --gpu_ids "
+                + gpu1
+                + " --load_size 512 --label_nc 18 --no_instance --preprocess_mode resize --batchSize 1 --results_dir "
+                + stage_3_output_dir
+                + " --no_parsing_map"
         )
 
         run_cmd(stage_3_command)
@@ -183,12 +183,12 @@ class Predictor(cog.Predictor):
         os.makedirs(stage_4_output_dir, exist_ok=True)
 
         stage_4_command = (
-            "python align_warp_back_multiple_dlib_HR.py --origin_url "
-            + stage_4_input_image_dir
-            + " --replace_url "
-            + stage_4_input_face_dir
-            + " --save_url "
-            + stage_4_output_dir
+                "python align_warp_back_multiple_dlib_HR.py --origin_url "
+                + stage_4_input_image_dir
+                + " --replace_url "
+                + stage_4_input_face_dir
+                + " --save_url "
+                + stage_4_output_dir
         )
 
         run_cmd(stage_4_command)
@@ -197,10 +197,9 @@ class Predictor(cog.Predictor):
 
         print("All the processing is done. Please check the results.")
 
-        img_name = os.path.basename(str(image))
-        image_restore = cv2.imread(
-            os.path.join(self.opts.output_folder, "final_output", img_name)
-        )
+        final_output = os.listdir(os.path.join(self.opts.output_folder, "final_output"))[0]
+
+        image_restore = cv2.imread(os.path.join(self.opts.output_folder, "final_output", final_output))
 
         out_path = Path(tempfile.mkdtemp()) / "out.png"
 
