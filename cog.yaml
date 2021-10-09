@@ -1,0 +1,26 @@
+build:
+  gpu: true
+  python_version: "3.8"
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+  python_packages:
+    - "cmake==3.21.2"
+    - "torchvision==0.9.0"
+    - "torch==1.8.0"
+    - "numpy==1.19.4"
+    - "opencv-python==4.4.0.46"
+    - "scipy==1.5.3"
+    - "tensorboardX==2.4"
+    - "dominate==2.6.0"
+    - "easydict==1.9"
+    - "PyYAML==5.3.1"
+    - "scikit-image==0.18.3"
+    - "dill==0.3.4"
+    - "einops==0.3.0"
+    - "PySimpleGUI==4.46.0"
+    - "ipython==7.19.0"
+  run:
+    - pip install dlib
+
+predict: "predict.py:Predictor"
