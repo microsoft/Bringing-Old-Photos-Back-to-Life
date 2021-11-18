@@ -82,14 +82,14 @@ def compute_transformation_matrix(img, landmark, normalize, target_face_scale=1.
     std_pts = _standard_face_pts()  # [-1,1]
     target_pts = (std_pts * target_face_scale + 1) / 2 * 256.0
 
-    # print(target_pts)
+    print(target_pts)
 
     h, w, c = img.shape
     if normalize == True:
         landmark[:, 0] = landmark[:, 0] / h * 2 - 1.0
         landmark[:, 1] = landmark[:, 1] / w * 2 - 1.0
 
-    # print(landmark)
+    print(landmark)
 
     affine = SimilarityTransform()
 
@@ -171,9 +171,13 @@ if __name__ == "__main__":
                 current_face = faces[face_id]
                 face_landmarks = landmark_locator(image, current_face)
                 current_fl = search(face_landmarks)
+                print("current face")
+                print(current_face)
+                plt(current_face)
 
                 affine = compute_transformation_matrix(image, current_fl, False, target_face_scale=1.3)
                 aligned_face = warp(image, affine, output_shape=(256, 256, 3))
+                plt(aligned_face)
                 img_name = x[:-4] + "_" + str(face_id + 1)
                 io.imsave(os.path.join(save_url, img_name + ".png"), img_as_ubyte(aligned_face))
 
