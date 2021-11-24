@@ -44,8 +44,8 @@ else:
 # opt.which_epoch=start_epoch-1
 model = create_da_model(opt)
 fd = open(path, 'w')
-fd.write(str(model.module.netG))
-fd.write(str(model.module.netD))
+fd.write(str(model.netG))
+fd.write(str(model.netD))
 fd.close()
 
 total_steps = (start_epoch - 1) * dataset_size + epoch_iter
@@ -72,7 +72,7 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
 
         # sum per device losses
         losses = [torch.mean(x) if not isinstance(x, int) else x for x in losses]
-        loss_dict = dict(zip(model.module.loss_names, losses))
+        loss_dict = dict(zip(model.loss_names, losses))
 
         # calculate final loss scalar
         loss_D = (loss_dict['D_fake'] + loss_dict['D_real']) * 0.5
@@ -81,18 +81,18 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
 
         ############### Backward Pass ####################
         # update generator weights
-        model.module.optimizer_G.zero_grad()
+        model.optimizer_G.zero_grad()
         loss_G.backward()
-        model.module.optimizer_G.step()
+        model.optimizer_G.step()
 
         # update discriminator weights
-        model.module.optimizer_D.zero_grad()
+        model.optimizer_D.zero_grad()
         loss_D.backward()
-        model.module.optimizer_D.step()
+        model.optimizer_D.step()
 
-        model.module.optimizer_featD.zero_grad()
+        model.optimizer_featD.zero_grad()
         loss_featD.backward()
-        model.module.optimizer_featD.step()
+        model.optimizer_featD.step()
 
         # call(["nvidia-smi", "--format=csv", "--query-gpu=memory.used,memory.free"])
 
@@ -101,7 +101,7 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         if total_steps % opt.print_freq == print_delta:
             errors = {k: v.data if not isinstance(v, int) else v for k, v in loss_dict.items()}
             t = (time.time() - iter_start_time) / opt.batchSize
-            visualizer.print_current_errors(epoch, epoch_iter, errors, t, model.module.old_lr)
+            visualizer.print_current_errors(epoch, epoch_iter, errors, t, model.old_lr)
             visualizer.plot_current_errors(errors, total_steps)
 
         ### display output images
@@ -133,15 +133,15 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
     ### save model for this epoch
     if epoch % opt.save_epoch_freq == 0:
         print('saving the model at the end of epoch %d, iters %d' % (epoch, total_steps))
-        model.module.save('latest')
-        model.module.save(epoch)
+        model.save('latest')
+        model.save(epoch)
         np.savetxt(iter_path, (epoch + 1, 0), delimiter=',', fmt='%d')
 
     ### instead of only training the local enhancer, train the entire network after certain iterations
     if (opt.niter_fix_global != 0) and (epoch == opt.niter_fix_global):
-        model.module.update_fixed_params()
+        model.update_fixed_params()
 
     ### linearly decay learning rate after certain iterations
     if epoch > opt.niter:
-        model.module.update_learning_rate()
+        model.update_learning_rate()
 
