@@ -11,3 +11,4 @@ scipy
 opencv-python
 einops
 PySimpleGUI
+matplotlib
