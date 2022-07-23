@@ -214,9 +214,9 @@ def blur_blending(im1, im2, mask):
     return np.array(im) / 255.0
 
 
-def blur_blending_cv2(im1, im2, mask):
+def blur_blending_cv2(im1, im2, mask_in):
 
-    mask *= 255.0
+    mask = mask_in * 255.0
 
     kernel = np.ones((9, 9), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=3)
