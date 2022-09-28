@@ -7,6 +7,11 @@ from run import run_cmd
 
 
 class Predictor(BasePredictor):
+    def setup(self):
+        self.basepath = os.getcwd()
+        self.input_folder = os.path.join(self.basepath, "input/cog_temp")
+        self.output_folder = os.path.join(self.basepath, "output")
+
     def predict(
         self,
         image: Path = Input(
@@ -22,17 +27,14 @@ class Predictor(BasePredictor):
         ),
     ) -> Path:
 
-        basepath = os.getcwd()
-        print(basepath)
-        input_folder = os.path.join(basepath, "input/cog_temp")
-        output_folder = os.path.join(basepath, "output")
-        for d in [input_folder, output_folder]:
+        print(self.basepath)
+        for d in [self.input_folder, self.output_folder]:
             if os.path.exists(d):
                 shutil.rmtree(d)
             os.makedirs(d)
         try:
-            os.chdir(basepath)
-            input_path = os.path.join(input_folder, os.path.basename(image))
+            os.chdir(self.basepath)
+            input_path = os.path.join(self.input_folder, os.path.basename(image))
             shutil.copy(str(image), input_path)
 
             gpu1 = "0"
@@ -40,8 +42,8 @@ class Predictor(BasePredictor):
             ## Stage 1: Overall Quality Improve
             print("Running Stage 1: Overall restoration")
             os.chdir("./Global")
-            stage_1_input_dir = input_folder
-            stage_1_output_dir = os.path.join(output_folder, "stage_1_restore_output")
+            stage_1_input_dir = self.input_folder
+            stage_1_output_dir = os.path.join(self.output_folder, "stage_1_restore_output")
 
             os.makedirs(stage_1_output_dir, exist_ok=True)
 
@@ -93,7 +95,7 @@ class Predictor(BasePredictor):
 
             ## Solve the case when there is no face in the old photo
             stage_1_results = os.path.join(stage_1_output_dir, "restored_image")
-            stage_4_output_dir = os.path.join(output_folder, "final_output")
+            stage_4_output_dir = os.path.join(self.output_folder, "final_output")
             os.makedirs(stage_4_output_dir, exist_ok=True)
             for x in os.listdir(stage_1_results):
                 img_dir = os.path.join(stage_1_results, x)
@@ -107,7 +109,7 @@ class Predictor(BasePredictor):
             print("Running Stage 2: Face Detection")
             os.chdir(".././Face_Detection")
             stage_2_input_dir = os.path.join(stage_1_output_dir, "restored_image")
-            stage_2_output_dir = os.path.join(output_folder, "stage_2_detection_output")
+            stage_2_output_dir = os.path.join(self.output_folder, "stage_2_detection_output")
             os.makedirs(stage_2_output_dir, exist_ok=True)
 
             stage_2_command = (
@@ -126,7 +128,7 @@ class Predictor(BasePredictor):
             os.chdir(".././Face_Enhancement")
             stage_3_input_mask = "./"
             stage_3_input_face = stage_2_output_dir
-            stage_3_output_dir = os.path.join(output_folder, "stage_3_face_output")
+            stage_3_output_dir = os.path.join(self.output_folder, "stage_3_face_output")
 
             os.makedirs(stage_3_output_dir, exist_ok=True)
 
@@ -154,7 +156,7 @@ class Predictor(BasePredictor):
             os.chdir(".././Face_Detection")
             stage_4_input_image_dir = os.path.join(stage_1_output_dir, "restored_image")
             stage_4_input_face_dir = os.path.join(stage_3_output_dir, "each_img")
-            stage_4_output_dir = os.path.join(output_folder, "final_output")
+            stage_4_output_dir = os.path.join(self.output_folder, "final_output")
             os.makedirs(stage_4_output_dir, exist_ok=True)
 
             stage_4_command = (
@@ -172,16 +174,16 @@ class Predictor(BasePredictor):
 
             print("All the processing is done. Please check the results.")
 
-            final_output = os.listdir(os.path.join(output_folder, "final_output"))[0]
+            final_output = os.listdir(os.path.join(self.output_folder, "final_output"))[0]
 
             image_restore = cv2.imread(
-                os.path.join(output_folder, "final_output", final_output)
+                os.path.join(self.output_folder, "final_output", final_output)
             )
 
             out_path = Path(tempfile.mkdtemp()) / "out.png"
 
             cv2.imwrite(str(out_path), image_restore)
         finally:
-            shutil.rmtree(input_folder)
-            shutil.rmtree(output_folder)
+            shutil.rmtree(self.input_folder)
+            shutil.rmtree(self.output_folder)
         return out_path
