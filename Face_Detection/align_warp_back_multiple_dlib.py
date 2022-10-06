@@ -195,9 +195,9 @@ def affine2theta(affine, input_w, input_h, target_w, target_h):
     return theta
 
 
-def blur_blending(im1, im2, mask):
+def blur_blending(im1, im2, mask_in):
 
-    mask *= 255.0
+    mask = (mask_in * 255.0)
 
     kernel = np.ones((10, 10), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=1)
