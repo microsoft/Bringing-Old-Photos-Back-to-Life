@@ -214,9 +214,9 @@ def blur_blending(im1, im2, mask_in):
     return np.array(im) / 255.0
 
 
-def blur_blending_cv2(im1, im2, mask):
+def blur_blending_cv2(im1, im2, mask_in):
 
-    mask *= 255.0
+    mask = (mask_in * 255.0)
 
     kernel = np.ones((9, 9), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=3)
@@ -236,10 +236,10 @@ def blur_blending_cv2(im1, im2, mask):
 
 
 #     Image.composite(
-def Poisson_blending(im1, im2, mask):
+def Poisson_blending(im1, im2, mask_in):
 
     # mask=1-mask
-    mask *= 255
+    mask = (mask_in * 255)
     kernel = np.ones((10, 10), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=1)
     mask /= 255
@@ -256,9 +256,9 @@ def Poisson_blending(im1, im2, mask):
     return result / 255.0
 
 
-def Poisson_B(im1, im2, mask, center):
+def Poisson_B(im1, im2, mask_in, center):
 
-    mask *= 255
+    mask = (mask_in * 255)
 
     result = cv2.seamlessClone(
         im2.astype("uint8"), im1.astype("uint8"), mask.astype("uint8"), center, cv2.NORMAL_CLONE
