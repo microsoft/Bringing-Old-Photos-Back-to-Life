@@ -72,17 +72,11 @@ class BaseModel(torch.nn.Module):
         if not save_dir:
             save_dir = self.save_dir
 
-        # print(save_dir)
-        # print(self.save_dir)
         save_path = os.path.join(save_dir, save_filename)
         if not os.path.isfile(save_path):
             print("%s not exists yet!" % save_path)
-            # if network_label == 'G':
-            #     raise('Generator must exist!')
         else:
-            # network.load_state_dict(torch.load(save_path))
             try:
-                # print(save_path)
                 network.load_state_dict(torch.load(save_path))
             except:
                 pretrained_dict = torch.load(save_path)
@@ -90,7 +84,6 @@ class BaseModel(torch.nn.Module):
                 try:
                     pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
                     network.load_state_dict(pretrained_dict)
-                    # if self.opt.verbose:
                     print(
                         "Pretrained network %s has excessive layers; Only loading layers that are used"
                         % network_label

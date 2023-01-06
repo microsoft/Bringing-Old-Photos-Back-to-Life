@@ -5,6 +5,7 @@ import os
 import argparse
 import shutil
 import sys
+import cv2
 from subprocess import call
 
 def run_cmd(command):
@@ -13,6 +14,19 @@ def run_cmd(command):
     except KeyboardInterrupt:
         print("Process interrupted")
         sys.exit(1)
+
+
+def resize_if_large(image_folder):
+    os.makedirs("checked_images", exist_ok=True)
+
+    for image_name in os.listdir(image_folder):
+        img = cv2.imread(os.path.join(image_folder, image_name), 0)
+        if img.shape[0] * img.shape[1] > 5.5 * 1e5:
+            print(f"Warning: downscaling image {image_name} for adequate work of a program")
+            img = cv2.resize(img, (img.shape[0] // 2, img.shape[1] // 2))
+        image_name = os.path.join("checked_images", image_name)
+        cv2.imwrite(image_name, img)
+
 
 if __name__ == "__main__":
 
@@ -45,7 +59,8 @@ if __name__ == "__main__":
     ## Stage 1: Overall Quality Improve
     print("Running Stage 1: Overall restoration")
     os.chdir("./Global")
-    stage_1_input_dir = opts.input_folder
+    resize_if_large(opts.input_folder)
+    stage_1_input_dir = "checked_images" #opts.input_folder
     stage_1_output_dir = os.path.join(opts.output_folder, "stage_1_restore_output")
     os.makedirs(stage_1_output_dir, exist_ok=True)
     os.makedirs(os.path.join(stage_1_output_dir, "restored_image"), exist_ok=True)
@@ -200,6 +215,8 @@ if __name__ == "__main__":
             + stage_4_output_dir
         )
     run_cmd(stage_4_command)
+
+    # shutil.rmtree("checked_images")
     print("Finish Stage 4 ...")
     print("\n")
 

@@ -182,11 +182,8 @@ class Pix2PixHDModel_Mapping(BaseModel):
             else:
                 self.criterionImage = torch.nn.SmoothL1Loss()
 
-
-            # print(self.criterionFeat_feat)
             if not opt.no_vgg_loss:
                 self.criterionVGG = networks.VGGLoss_torch(self.gpu_ids)
-
 
             # Names so we can breakout loss
             self.loss_names = self.loss_filter('G_Feat_L2', 'G_GAN', 'G_GAN_Feat', 'G_VGG','D_real', 'D_fake', 'Smooth_L1', 'G_Feat_L2_Stage_1')
@@ -200,7 +197,6 @@ class Pix2PixHDModel_Mapping(BaseModel):
             else:
                 beta1,beta2=0,0.9
                 G_lr,D_lr=opt.lr/2,opt.lr*2
-
 
             if not opt.no_load_VAE:
                 params = list(self.mapping_net.parameters())
@@ -251,21 +247,21 @@ class Pix2PixHDModel_Mapping(BaseModel):
 
         # Fake Generation
         input_concat = input_label
-        print("input netG_A:", input_concat.shape)
+        # print("input netG_A:", input_concat.shape)
 
         label_feat = self.netG_A.forward(input_concat, flow='enc')
 
         if self.opt.NL_use_mask:
             label_feat_map=self.mapping_net(label_feat.detach(),inst)
-            print("input mapping_net:", label_feat.shape, inst.shape)
+            # print("input mapping_net:", label_feat.shape, inst.shape)
         else:
             label_feat_map = self.mapping_net(label_feat.detach())
-            print("input mapping_net:", label_feat.shape)
+            # print("input mapping_net:", label_feat.shape)
 
-        fake_image = self.netG_B.forward(label_feat_map, flow='dec')
-        print("input netG_B decoder:", label_feat_map.shape)
+        # fake_image = self.netG_B.forward(label_feat_map, flow='dec')
+        # print("input netG_B decoder:", label_feat_map.shape)
         image_feat = self.netG_B.forward(real_image, flow='enc')
-        print("input netG_B encoder:", real_image.shape)
+        # print("input netG_B encoder:", real_image.shape)
 
         loss_feat_l2_stage_1=0
         loss_feat_l2 = self.criterionFeat_feat(label_feat_map, image_feat.data) * self.opt.l2_feat
@@ -282,7 +278,7 @@ class Pix2PixHDModel_Mapping(BaseModel):
 
             # GAN loss (Fake Passability Loss)
             pred_fake = self.netD.forward(torch.cat((label_feat.detach(), label_feat_map), dim=1))
-            print("input netD:", torch.cat((label_feat.detach(), label_feat_map), dim=1).shape)
+            # print("input netD:", torch.cat((label_feat.detach(), label_feat_map), dim=1).shape)
             loss_G_GAN = self.criterionGAN(pred_fake, True)
         else:
             # Fake Detection and Loss
@@ -298,7 +294,7 @@ class Pix2PixHDModel_Mapping(BaseModel):
 
             # GAN loss (Fake Passability Loss)
             pred_fake = self.netD.forward(torch.cat((input_label, fake_image), dim=1))
-            print("input netD:", torch.cat((input_label, fake_image), dim=1).shape)
+            # print("input netD:", torch.cat((input_label, fake_image), dim=1).shape)
             loss_G_GAN = self.criterionGAN(pred_fake, True)
 
         # GAN feature matching loss
@@ -337,21 +333,21 @@ class Pix2PixHDModel_Mapping(BaseModel):
             inst_data = inst
 
         label_feat = self.netG_A.forward(input_concat, flow="enc")
-        print("netG_A encoder input:", input_concat.shape)
+        # print("netG_A encoder input:", input_concat.shape)
 
         if self.opt.NL_use_mask:
             if self.opt.inference_optimize:
                 label_feat_map=self.mapping_net.inference_forward(label_feat.detach(),inst_data)
-                print("mapping_net input:", label_feat.shape, inst_data.shape)
+                # print("mapping_net input:", label_feat.shape, inst_data.shape)
             else:
                 label_feat_map = self.mapping_net(label_feat.detach(), inst_data)
-                print("mapping_net input:", label_feat.shape, inst_data.shape)
+                # print("mapping_net input:", label_feat.shape, inst_data.shape)
         else:
             label_feat_map = self.mapping_net(label_feat.detach())
-            print("mapping_net input:", label_feat.shape)
+            # print("mapping_net input:", label_feat.shape)
 
         fake_image = self.netG_B.forward(label_feat_map, flow="dec")
-        print("netG_B encoder input:", label_feat.shape, inst_data.shape)
+        # print("netG_B encoder input:", label_feat.shape, inst_data.shape)
         return fake_image
 
 

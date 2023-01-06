@@ -217,7 +217,6 @@ def blur_blending(im1, im2, mask):
 def blur_blending_cv2(im1, im2, mask):
 
     mask = mask.astype(np.float32)
-
     mask *= 255.0
 
     kernel = np.ones((9, 9), np.uint8)

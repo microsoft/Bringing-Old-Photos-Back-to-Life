@@ -281,19 +281,13 @@ class GlobalGenerator_DCDCv2(nn.Module):
         self.decoder = nn.Sequential(*model)
 
     def forward(self, input, flow="enc_dec"):
-        print(input)
-        print("flow", flow)
         if flow == "enc":
-            print("enc input", input, type(input))
             return self.encoder(input)
         elif flow == "dec":
-            print("dec input", input, type(input))
             return self.decoder(input)
         elif flow == "enc_dec":
-            print("enc_dec input", input, type(input))
             x = self.encoder(input)
             x = self.decoder(x)
-            print("after decoder", x)
             return x
 
 
@@ -497,16 +491,8 @@ class NonLocalBlock2D_with_mask_Res(nn.Module):
         mask_expand = mask.view(batch_size, 1, -1)
         mask_expand = mask_expand.repeat(1, x.size(2) * x.size(3), 1)
 
-        # mask = 1 - mask
-        # mask=F.interpolate(mask,(x.size(2),x.size(3)))
-        # mask_expand=mask.view(batch_size,1,-1)
-        # mask_expand=mask_expand.repeat(1,x.size(2)*x.size(3),1)
-
         if self.use_self:
             mask_expand[:, range(x.size(2) * x.size(3)), range(x.size(2) * x.size(3))] = 1.0
-
-        #    print(mask_expand.shape)
-        #    print(f_div_C.shape)
 
         f_div_C = mask_expand * f_div_C
         if self.renorm:
@@ -711,10 +697,7 @@ class Patch_Attention_4(nn.Module):  ## While combine the feature map, use conv 
         correlation_matrix=correlation_matrix.masked_fill(non_mask_region==1.,-1e9)
         correlation_matrix=F.softmax(correlation_matrix,dim=2)
 
-        # print(correlation_matrix)
-
         R, max_arg=torch.max(correlation_matrix,dim=2)
-
         composed_unfold=self.Hard_Compose(x_unfold, 2, max_arg)
         composed_fold=F.fold(composed_unfold,output_size=(h,w),kernel_size=(self.patch_size,self.patch_size),padding=0,stride=self.patch_size)
 
