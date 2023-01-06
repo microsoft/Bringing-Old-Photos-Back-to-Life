@@ -216,6 +216,8 @@ def blur_blending(im1, im2, mask):
 
 def blur_blending_cv2(im1, im2, mask):
 
+    mask = mask.astype(np.float32)
+
     mask *= 255.0
 
     kernel = np.ones((9, 9), np.uint8)
@@ -434,4 +436,3 @@ if __name__ == "__main__":
 
         if count % 1000 == 0:
             print("%d have finished ..." % (count))
-

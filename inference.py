@@ -24,11 +24,11 @@ if __name__ == "__main__":
         default="./output",
         help="Restored images, please use the absolute path",
     )
-    parser.add_argument("--GPU", type=str, default="6,7", help="0,1,2")
+    parser.add_argument("--GPU", type=str, default="0", help="0,1,2")
     parser.add_argument(
         "--checkpoint_name", type=str, default="Setting_9_epoch_100", help="choose which checkpoint"
     )
-    parser.add_argument("--with_scratch", action="store_true")
+    parser.add_argument("--with_scratch", action="store_true", default=True)
     parser.add_argument("--HR", action='store_true')
     opts = parser.parse_args()
 
@@ -47,9 +47,11 @@ if __name__ == "__main__":
     os.chdir("./Global")
     stage_1_input_dir = opts.input_folder
     stage_1_output_dir = os.path.join(opts.output_folder, "stage_1_restore_output")
-    if not os.path.exists(stage_1_output_dir):
-        os.makedirs(stage_1_output_dir)
+    os.makedirs(stage_1_output_dir, exist_ok=True)
+    os.makedirs(os.path.join(stage_1_output_dir, "restored_image"), exist_ok=True)
 
+    print(stage_1_output_dir)
+    print(os.path.join(stage_1_output_dir, "restored_image"))
     if not opts.with_scratch:
         stage_1_command = (
             "python test.py --test_mode Full --Quality_restore --test_input "
@@ -99,6 +101,7 @@ if __name__ == "__main__":
     stage_4_output_dir = os.path.join(opts.output_folder, "final_output")
     os.makedirs(stage_1_results, exist_ok=True)
     os.makedirs(stage_4_output_dir, exist_ok=True)
+    # print(stage_1_results, os.path.exists(stage_1_results))
     # if not os.path.exists(stage_4_output_dir):
     #     os.makedirs(stage_4_output_dir)
     for x in os.listdir(stage_1_results):

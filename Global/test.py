@@ -4,16 +4,19 @@
 import os
 from collections import OrderedDict
 from torch.autograd import Variable
-from options.test_options import TestOptions
-from models.models import create_model
-from models.mapping_model import Pix2PixHDModel_Mapping
-import util.util as util
 from PIL import Image
 import torch
 import torchvision.utils as vutils
 import torchvision.transforms as transforms
 import numpy as np
 import cv2
+import onnxruntime
+
+from options.test_options import TestOptions
+from models.models import create_model
+from models.mapping_model import Pix2PixHDModel_Mapping
+import util.util as util
+
 
 def data_transforms(img, method=Image.BILINEAR, scale=False):
 
@@ -92,14 +95,84 @@ def parameter_set(opt):
             opt.name = "mapping_Patch_Attention"
 
 
+def get_onnx_sessions(model, device="cuda"):
+    """Now you are processing photoshop-photo-restoration-michelle-spalding-22-5d1080d7aa1b6__700.png
+    netG_A encoder input: torch.Size([1, 3, 512, 512])
+    mapping_net input: torch.Size(
+        [1, 64, 128, 128]) torch.Size([1, 1, 928, 704])
+    netG_B encoder input: torch.Size(
+        [1, 64, 128, 128]) torch.Size([1, 1, 928, 704])
+    """
+
+    os.makedirs("onnx_models", exist_ok=True)
+    if not os.path.exists("onnx_models/netG_A_encoder.onnx"):
+        dummy_input = torch.randn(1, 3, 512, 512, requires_grad=True, device=device)
+        torch.onnx.export(
+            model.netG_A,
+            dummy_input,
+            "onnx_models/netG_A_encoder.onnx",
+            opset_version=11,
+            input_names = ['input'],
+            output_names = ['output'],
+            dynamic_axes = {'input': [0, 2, 3], 'output': [0, 2, 3]}
+        )
+
+    if not os.path.exists("onnx_models/netG_B_encoder.onnx"):
+        # dummy_input = (
+        #     torch.randn(1, 64, 128, 128, requires_grad=True, device=device),
+        #     torch.randn(1, 1, 928, 704, requires_grad=True, device=device)
+        # )
+        dummy_input = torch.randn(1, 3, 128, 128, requires_grad=True, device=device)
+        torch.onnx.export(
+            model.netG_B,
+            dummy_input,
+            "onnx_models/netG_B_encoder.onnx",
+            opset_version=11,
+            input_names = ['input'],
+            output_names = ['output'],
+            dynamic_axes = {
+                'input': [0, 2, 3], 'output': [0, 2, 3]
+            }
+        )
+
+    if not os.path.exists("onnx_models/mapping_net.onnx"):
+        dummy_input = (
+            torch.randn(1, 64, 128, 128, requires_grad=True, device=device),
+            torch.randn(1, 1, 928, 704, requires_grad=True, device=device)
+        )
+        torch.onnx.export(
+            model.mapping_net,
+            dummy_input,
+            "onnx_models/mapping_net.onnx",
+            opset_version=11,
+            input_names = ['input', 'mask'],
+            output_names = ['output'],
+            dynamic_axes = {
+               'input': [0, 2, 3], 'mask': [0, 2, 3], 'output': [0, 2, 3]
+            }
+        )
+
+    netG_A_encoder = onnxruntime.InferenceSession("onnx_models/netG_A_encoder.onnx")
+    netG_B_encoder = onnxruntime.InferenceSession("onnx_models/netG_B_encoder.onnx")
+    mapping_net = onnxruntime.InferenceSession("onnx_models/mapping_net.onnx")
+
+    return {
+        "netG_A_encoder": netG_A_encoder,
+        "netG_B_encoder": netG_B_encoder,
+        "mapping_net": mapping_net
+    }
+
+
+
 if __name__ == "__main__":
 
     opt = TestOptions().parse(save=False)
     parameter_set(opt)
 
     model = Pix2PixHDModel_Mapping()
-
+    os.makedirs("onnx_models", exist_ok=True)
     model.initialize(opt)
+    sessions = get_onnx_sessions(model)
     model.eval()
 
     if not os.path.exists(opt.outputs_dir + "/" + "input_image"):

@@ -49,7 +49,7 @@ def print_network(net):
 
 def define_G(input_nc, output_nc, ngf, netG, k_size=3, n_downsample_global=3, n_blocks_global=9, n_local_enhancers=1,
              n_blocks_local=3, norm='instance', gpu_ids=[], opt=None):
-    
+
     norm_layer = get_norm_layer(norm_type=norm)
     if netG == 'global':
         # if opt.self_gen:
@@ -281,13 +281,19 @@ class GlobalGenerator_DCDCv2(nn.Module):
         self.decoder = nn.Sequential(*model)
 
     def forward(self, input, flow="enc_dec"):
+        print(input)
+        print("flow", flow)
         if flow == "enc":
+            print("enc input", input, type(input))
             return self.encoder(input)
         elif flow == "dec":
+            print("dec input", input, type(input))
             return self.decoder(input)
         elif flow == "enc_dec":
+            print("enc_dec input", input, type(input))
             x = self.encoder(input)
             x = self.decoder(x)
+            print("after decoder", x)
             return x
 
 
@@ -751,11 +757,11 @@ class Patch_Attention_4(nn.Module):  ## While combine the feature map, use conv 
             unmask_index=torch.nonzero(non_mask_region!=1,as_tuple=True)[0]
 
             x_unfold=F.unfold(x, kernel_size=(self.patch_size,self.patch_size), padding=0, stride=self.patch_size)
-            
+
             Query_Patch=torch.index_select(x_unfold,2,mask_index)
             Key_Patch=torch.index_select(x_unfold,2,unmask_index)
 
-            Query_Patch=Query_Patch.permute(0,2,1)        
+            Query_Patch=Query_Patch.permute(0,2,1)
             Query_Patch_normalized=F.normalize(Query_Patch,dim=2)
             Key_Patch_normalized=F.normalize(Key_Patch,dim=1)
 

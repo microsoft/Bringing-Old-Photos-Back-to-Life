@@ -12,7 +12,7 @@ try:
 except ImportError:
     from io import BytesIO  # Python 3.x
 import torchvision.utils as vutils
-from tensorboardX import SummaryWriter
+# from tensorboardX import SummaryWriter
 import torch
 import numpy as np
 
@@ -32,7 +32,7 @@ class Visualizer:
                 self.log_dir = os.path.join(opt.checkpoints_dir, opt.name, "logs")
                 if not os.path.exists(self.log_dir):
                     os.makedirs(self.log_dir)
-                self.writer = SummaryWriter(log_dir=self.log_dir)
+                # self.writer = SummaryWriter(log_dir=self.log_dir)
             else:
                 print("hi :)")
                 self.log_dir = os.path.join(opt.checkpoints_dir, opt.name, opt.results_dir)
@@ -74,20 +74,20 @@ class Visualizer:
             for tag, value in errors.items():
                 value = value.mean().float()
                 summary = self.tf.Summary(value=[self.tf.Summary.Value(tag=tag, simple_value=value)])
-                self.writer.add_summary(summary, step)
+                # self.writer.add_summary(summary, step)
 
-        if self.tensorboard_log:
-
-            self.writer.add_scalar("Loss/GAN_Feat", errors["GAN_Feat"].mean().float(), step)
-            self.writer.add_scalar("Loss/VGG", errors["VGG"].mean().float(), step)
-            self.writer.add_scalars(
-                "Loss/GAN",
-                {
-                    "G": errors["GAN"].mean().float(),
-                    "D": (errors["D_Fake"].mean().float() + errors["D_real"].mean().float()) / 2,
-                },
-                step,
-            )
+        # if self.tensorboard_log:
+        #
+        #     self.writer.add_scalar("Loss/GAN_Feat", errors["GAN_Feat"].mean().float(), step)
+        #     self.writer.add_scalar("Loss/VGG", errors["VGG"].mean().float(), step)
+        #     self.writer.add_scalars(
+        #         "Loss/GAN",
+        #         {
+        #             "G": errors["GAN"].mean().float(),
+        #             "D": (errors["D_Fake"].mean().float() + errors["D_real"].mean().float()) / 2,
+        #         },
+        #         step,
+        #     )
 
     # errors: same format as |errors| of plotCurrentErrors
     def print_current_errors(self, epoch, i, errors, t):
