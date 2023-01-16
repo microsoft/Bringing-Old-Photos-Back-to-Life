@@ -129,19 +129,22 @@ class Pix2PixHDModel_Mapping(BaseModel):
 
         self.mapping_net.apply(networks.weights_init)
 
-        if opt.load_pretrain != "":
-            self.load_network(self.mapping_net, "mapping_net", opt.which_epoch, opt.load_pretrain)
+        try:
+            if opt.load_pretrain != "":
+                self.load_network(self.mapping_net, "mapping_net", opt.which_epoch, opt.load_pretrain)
 
-        if not opt.no_load_VAE:
+            if not opt.no_load_VAE:
 
-            self.load_network(self.netG_A, "G", opt.use_vae_which_epoch, opt.load_pretrainA)
-            self.load_network(self.netG_B, "G", opt.use_vae_which_epoch, opt.load_pretrainB)
-            for param in self.netG_A.parameters():
-                param.requires_grad = False
-            for param in self.netG_B.parameters():
-                param.requires_grad = False
-            self.netG_A.eval()
-            self.netG_B.eval()
+                self.load_network(self.netG_A, "G", opt.use_vae_which_epoch, opt.load_pretrainA)
+                self.load_network(self.netG_B, "G", opt.use_vae_which_epoch, opt.load_pretrainB)
+                for param in self.netG_A.parameters():
+                    param.requires_grad = False
+                for param in self.netG_B.parameters():
+                    param.requires_grad = False
+                self.netG_A.eval()
+                self.netG_B.eval()
+        except Exception:
+            print("No python checkpoint found. Perphaps you are using onnx model further?")
 
         if opt.gpu_ids:
             self.netG_A.cuda(opt.gpu_ids[0])

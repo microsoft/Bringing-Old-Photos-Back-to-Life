@@ -18,6 +18,32 @@ from models.mapping_model import Pix2PixHDModel_Mapping
 import util.util as util
 
 
+def encode_input(opt, label_map, inst_map=None, real_image=None, feat_map=None, infer=False):
+    if opt.label_nc == 0:
+        input_label = label_map.data.cuda()
+    else:
+        # create one-hot vector for label map
+        size = label_map.size()
+        oneHot_size = (size[0], opt.label_nc, size[2], size[3])
+        input_label = torch.cuda.FloatTensor(torch.Size(oneHot_size)).zero_()
+        input_label = input_label.scatter_(1, label_map.data.long().cuda(), 1.0)
+        if self.opt.data_type == 16:
+            input_label = input_label.half()
+
+    # get edges from instance map
+    if not opt.no_instance:
+        inst_map = inst_map.data.cuda()
+        edge_map = self.get_edges(inst_map)
+        input_label = torch.cat((input_label, edge_map), dim=1)
+    input_label = Variable(input_label, volatile=infer)
+
+    # real images for training
+    if real_image is not None:
+        real_image = Variable(real_image.data.cuda())
+
+    return input_label, inst_map, real_image, feat_map
+
+
 def data_transforms(img, method=Image.BILINEAR, scale=False):
 
     ow, oh = img.size
@@ -95,20 +121,12 @@ def parameter_set(opt):
             opt.name = "mapping_Patch_Attention"
 
 
-def get_onnx_sessions(model, device="cuda"):
-    """Now you are processing photoshop-photo-restoration-michelle-spalding-22-5d1080d7aa1b6__700.png
-    netG_A encoder input: torch.Size([1, 3, 512, 512])
-    mapping_net input: torch.Size(
-        [1, 64, 128, 128]) torch.Size([1, 1, 928, 704])
-    netG_B encoder input: torch.Size(
-        [1, 64, 128, 128]) torch.Size([1, 1, 928, 704])
-    """
-
+def make_onnx_files(model, device="cuda"):
     os.makedirs("onnx_models", exist_ok=True)
     if not os.path.exists("onnx_models/netG_A_encoder.onnx"):
         dummy_input = torch.randn(1, 3, 512, 512, requires_grad=True, device=device)
         torch.onnx.export(
-            model.netG_A,
+            model.netG_A.encoder,
             dummy_input,
             "onnx_models/netG_A_encoder.onnx",
             opset_version=11,
@@ -117,16 +135,12 @@ def get_onnx_sessions(model, device="cuda"):
             dynamic_axes = {'input': [0, 2, 3], 'output': [0, 2, 3]}
         )
 
-    if not os.path.exists("onnx_models/netG_B_encoder.onnx"):
-        # dummy_input = (
-        #     torch.randn(1, 64, 128, 128, requires_grad=True, device=device),
-        #     torch.randn(1, 1, 928, 704, requires_grad=True, device=device)
-        # )
-        dummy_input = torch.randn(1, 3, 128, 128, requires_grad=True, device=device)
+    if not os.path.exists("onnx_models/netG_B_decoder.onnx"):
+        dummy_input = torch.randn(1, 64, 128, 128, requires_grad=True, device=device)
         torch.onnx.export(
-            model.netG_B,
+            model.netG_B.decoder,
             dummy_input,
-            "onnx_models/netG_B_encoder.onnx",
+            "onnx_models/netG_B_decoder.onnx",
             opset_version=11,
             input_names = ['input'],
             output_names = ['output'],
@@ -152,16 +166,70 @@ def get_onnx_sessions(model, device="cuda"):
             }
         )
 
+"""
+RuntimeError: Given groups=1, weight of size [64, 64, 3, 3],
+expected input[1, 3, 130, 130] to have 64 channels,
+but got 3 channels instead
+Finish Stage 1 ...
+"""
+
+def to_numpy(tensor):
+    if isinstance(tensor, list):
+        return np.array(tensor) #torch.tensor(tensor)
+    elif isinstance(tensor, np.ndarray):
+        return tensor
+    return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
+
+
+def get_onnx_sessions():
     netG_A_encoder = onnxruntime.InferenceSession("onnx_models/netG_A_encoder.onnx")
-    netG_B_encoder = onnxruntime.InferenceSession("onnx_models/netG_B_encoder.onnx")
+    netG_B_decoder = onnxruntime.InferenceSession("onnx_models/netG_B_decoder.onnx")
     mapping_net = onnxruntime.InferenceSession("onnx_models/mapping_net.onnx")
 
     return {
         "netG_A_encoder": netG_A_encoder,
-        "netG_B_encoder": netG_B_encoder,
+        "netG_B_decoder": netG_B_decoder,
         "mapping_net": mapping_net
     }
 
+
+def run_model_parts(opt, sessions, inst, mask):
+    netG_A_encoder = sessions["netG_A_encoder"]
+    netG_B_decoder = sessions["netG_B_decoder"]
+    mapping_net = sessions["mapping_net"]
+
+    use_gpu = len(opt.gpu_ids) > 0
+    if use_gpu:
+        input_concat = mask.data.cuda()
+        inst_data = inst.cuda()
+    else:
+        input_concat = mask.data
+        inst_data = inst
+
+    print(input_concat.shape, mask.shape, inst.shape)
+    # [1, 1, 544, 848] [1, 1, 544, 848] [1, 3, 544, 848]
+
+    netG_A_encoder_inp = {
+        netG_A_encoder.get_inputs()[0].name: to_numpy(inst_data),
+        # netG_A_encoder.get_inputs()[1].name: to_numpy(inst_data)
+    }
+
+    # netG_A_encoder_inp =
+    netG_A_enc_out = netG_A_encoder.run(None, netG_A_encoder_inp)
+    print(netG_A_enc_out[0].shape)
+
+    mapping_net_inp = {
+        mapping_net.get_inputs()[0].name: netG_A_enc_out[0],
+        mapping_net.get_inputs()[1].name: to_numpy(input_concat)
+    }
+    # label_feat.detach(), inst_data
+    mapping_net_out = mapping_net.run(None, mapping_net_inp)
+
+    netG_B_decoder_inp = {
+        netG_B_decoder.get_inputs()[0].name: to_numpy(mapping_net_out[0])}
+    netG_B_dec_out = netG_B_decoder.run(None, netG_B_decoder_inp)
+
+    return netG_B_dec_out
 
 
 if __name__ == "__main__":
@@ -170,10 +238,12 @@ if __name__ == "__main__":
     parameter_set(opt)
 
     model = Pix2PixHDModel_Mapping()
-    os.makedirs("onnx_models", exist_ok=True)
-    model.initialize(opt)
-    sessions = get_onnx_sessions(model)
-    model.eval()
+    if not os.path.exists("onnx_models"):
+        model.initialize(opt)
+        model.eval()
+        os.makedirs("onnx_models", exist_ok=True)
+        make_onnx_files(model)
+    sessions = get_onnx_sessions()
 
     if not os.path.exists(opt.outputs_dir + "/" + "input_image"):
         os.makedirs(opt.outputs_dir + "/" + "input_image")
@@ -237,12 +307,14 @@ if __name__ == "__main__":
             mask = torch.zeros_like(input)
         ### Necessary input
 
-        try:
-            with torch.no_grad():
-                generated = model.inference(input, mask)
-        except Exception as ex:
-            print("Skip %s due to an error:\n%s" % (input_name, str(ex)))
-            continue
+        generated = run_model_parts(opt, sessions, input, mask)
+
+        # try:
+        #     with torch.no_grad():
+        #         generated = model.inference(input, mask)
+        # except Exception as ex:
+        #     print("Skip %s due to an error:\n%s" % (input_name, str(ex)))
+        #     continue
 
         if input_name.endswith(".jpg"):
             input_name = input_name[:-4] + ".png"
@@ -254,8 +326,10 @@ if __name__ == "__main__":
             padding=0,
             normalize=True,
         )
+        print(torch.Tensor(generated).shape)
         image_grid = vutils.save_image(
-            (generated.data.cpu() + 1.0) / 2.0,
+            (torch.Tensor(generated[0]) + 1.0) / 2.0,
+            #(generated.data.cpu() + 1.0) / 2.0,
             opt.outputs_dir + "/restored_image/" + input_name,
             nrow=1,
             padding=0,

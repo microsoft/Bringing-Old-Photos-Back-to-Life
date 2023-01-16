@@ -31,7 +31,7 @@ def resize_if_large(image_folder):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input_folder", type=str, default="./test_images/old", help="Test images")
+    parser.add_argument("--input_folder", type=str, default="./scratch_images", help="Test images")
     parser.add_argument(
         "--output_folder",
         type=str,
@@ -50,6 +50,7 @@ if __name__ == "__main__":
 
     # resolve relative paths before changing directory
     opts.input_folder = os.path.abspath(opts.input_folder)
+    # print("INPUT FOLDER:", opts.input_folder)
     opts.output_folder = os.path.abspath(opts.output_folder)
     if not os.path.exists(opts.output_folder):
         os.makedirs(opts.output_folder)
@@ -215,6 +216,10 @@ if __name__ == "__main__":
             + stage_4_output_dir
         )
     run_cmd(stage_4_command)
+    try:
+        shutil.rmtree(stage_1_input_dir)
+    except Exception:
+        pass
 
     # shutil.rmtree("checked_images")
     print("Finish Stage 4 ...")

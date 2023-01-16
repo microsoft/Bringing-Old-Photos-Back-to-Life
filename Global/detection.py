@@ -95,7 +95,7 @@ def main(config):
 
     if config.GPU >= 0:
         model.to(config.GPU)
-    else: 
+    else:
         model.cpu()
     model.eval()
 
