@@ -206,7 +206,7 @@ def run_model_parts(opt, sessions, inst, mask):
         input_concat = mask.data
         inst_data = inst
 
-    print(input_concat.shape, mask.shape, inst.shape)
+    # print(input_concat.shape, mask.shape, inst.shape)
     # [1, 1, 544, 848] [1, 1, 544, 848] [1, 3, 544, 848]
 
     netG_A_encoder_inp = {
@@ -216,7 +216,7 @@ def run_model_parts(opt, sessions, inst, mask):
 
     # netG_A_encoder_inp =
     netG_A_enc_out = netG_A_encoder.run(None, netG_A_encoder_inp)
-    print(netG_A_enc_out[0].shape)
+    # print(netG_A_enc_out[0].shape)
 
     mapping_net_inp = {
         mapping_net.get_inputs()[0].name: netG_A_enc_out[0],

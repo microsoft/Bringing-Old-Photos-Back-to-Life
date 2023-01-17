@@ -13,6 +13,7 @@ import torch
 import torch.nn.functional as F
 import torchvision as tv
 from PIL import Image, ImageFile
+import onnxruntime
 
 from detection_models import networks
 from detection_util.util import *
@@ -20,6 +21,14 @@ from detection_util.util import *
 warnings.filterwarnings("ignore", category=UserWarning)
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+
+def to_numpy(tensor):
+    if isinstance(tensor, list):
+        return np.array(tensor) #torch.tensor(tensor)
+    elif isinstance(tensor, np.ndarray):
+        return tensor
+    return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
 
 
 def data_transforms(img, full_size, method=Image.BICUBIC):
@@ -71,34 +80,49 @@ def blend_mask(img, mask):
 
 
 def main(config):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     print("initializing the dataloader")
 
-    model = networks.UNet(
-        in_channels=1,
-        out_channels=1,
-        depth=4,
-        conv_num=2,
-        wf=6,
-        padding=True,
-        batch_norm=True,
-        up_mode="upsample",
-        with_tanh=False,
-        sync_bn=True,
-        antialiasing=True,
-    )
+    if not os.path.exists("onnx_checkpoints"):
+        model = networks.UNet(
+            in_channels=1,
+            out_channels=1,
+            depth=4,
+            conv_num=2,
+            wf=6,
+            padding=True,
+            batch_norm=True,
+            up_mode="upsample",
+            with_tanh=False,
+            sync_bn=True,
+            antialiasing=True,
+        )
 
-    ## load model
-    checkpoint_path = os.path.join(os.path.dirname(__file__), "checkpoints/detection/FT_Epoch_latest.pt")
-    checkpoint = torch.load(checkpoint_path, map_location="cpu")
-    model.load_state_dict(checkpoint["model_state"])
-    print("model weights loaded")
+        checkpoint_path = os.path.join(os.path.dirname(__file__), "checkpoints/detection/FT_Epoch_latest.pt")
+        checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        model.load_state_dict(checkpoint["model_state"])
+        print("model weights loaded")
 
-    if config.GPU >= 0:
-        model.to(config.GPU)
-    else:
-        model.cpu()
-    model.eval()
+        if config.GPU >= 0:
+            model.to(config.GPU)
+        else:
+            model.cpu()
+        model.eval()
 
+        dummy_input = torch.randn(1, 1, 512, 512, requires_grad=True, device=device)
+        torch.onnx.export(
+            model,
+            dummy_input,
+            "onnx_models/unet_detection.onnx",
+            opset_version=11,
+            input_names = ['input'],
+            output_names = ['output'],
+            dynamic_axes = {'input': [0, 2, 3], 'output': [0, 2, 3]}
+        )
+
+    session = onnxruntime.InferenceSession("onnx_models/unet_detection.onnx")
+
+    # out = out[0]
     ## dataloader and transformation
     print("directory of testing image: " + config.test_path)
     imagelist = os.listdir(config.test_path)
@@ -140,12 +164,20 @@ def main(config):
         _, _, ow, oh = scratch_image.shape
         scratch_image_scale = scale_tensor(scratch_image)
 
-        if config.GPU >= 0:
-            scratch_image_scale = scratch_image_scale.to(config.GPU)
-        else:
-            scratch_image_scale = scratch_image_scale.cpu()
-        with torch.no_grad():
-            P = torch.sigmoid(model(scratch_image_scale))
+        input = {
+            session.get_inputs()[0].name: to_numpy(scratch_image_scale),
+            # netG_A_encoder.get_inputs()[1].name: to_numpy(inst_data)
+        }
+
+        out = session.run(None, input)
+        P = torch.sigmoid(torch.from_numpy(out[0]))
+
+        # if config.GPU >= 0:
+        #     scratch_image_scale = scratch_image_scale.to(config.GPU)
+        # else:
+        #     scratch_image_scale = scratch_image_scale.cpu()
+        # with torch.no_grad():
+        #     P = torch.sigmoid(model(scratch_image_scale))
 
         P = P.data.cpu()
         P = F.interpolate(P, [ow, oh], mode="nearest")
