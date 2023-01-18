@@ -21,9 +21,6 @@ def resize_if_large(image_folder):
 
     for image_name in os.listdir(image_folder):
         img = cv2.imread(os.path.join(image_folder, image_name), 0)
-        if img.shape[0] * img.shape[1] > 5.5 * 1e5:
-            print(f"Warning: downscaling image {image_name} for adequate work of a program")
-            img = cv2.resize(img, (img.shape[0] // 2, img.shape[1] // 2))
         image_name = os.path.join("checked_images", image_name)
         cv2.imwrite(image_name, img)
 
@@ -50,7 +47,6 @@ if __name__ == "__main__":
 
     # resolve relative paths before changing directory
     opts.input_folder = os.path.abspath(opts.input_folder)
-    # print("INPUT FOLDER:", opts.input_folder)
     opts.output_folder = os.path.abspath(opts.output_folder)
     if not os.path.exists(opts.output_folder):
         os.makedirs(opts.output_folder)
@@ -60,14 +56,11 @@ if __name__ == "__main__":
     ## Stage 1: Overall Quality Improve
     print("Running Stage 1: Overall restoration")
     os.chdir("./Global")
-    resize_if_large(opts.input_folder)
-    stage_1_input_dir = "checked_images" #opts.input_folder
+    stage_1_input_dir = opts.input_folder
     stage_1_output_dir = os.path.join(opts.output_folder, "stage_1_restore_output")
     os.makedirs(stage_1_output_dir, exist_ok=True)
     os.makedirs(os.path.join(stage_1_output_dir, "restored_image"), exist_ok=True)
 
-    print(stage_1_output_dir)
-    print(os.path.join(stage_1_output_dir, "restored_image"))
     if not opts.with_scratch:
         stage_1_command = (
             "python test.py --test_mode Full --Quality_restore --test_input "
@@ -117,9 +110,6 @@ if __name__ == "__main__":
     stage_4_output_dir = os.path.join(opts.output_folder, "final_output")
     os.makedirs(stage_1_results, exist_ok=True)
     os.makedirs(stage_4_output_dir, exist_ok=True)
-    # print(stage_1_results, os.path.exists(stage_1_results))
-    # if not os.path.exists(stage_4_output_dir):
-    #     os.makedirs(stage_4_output_dir)
     for x in os.listdir(stage_1_results):
         img_dir = os.path.join(stage_1_results, x)
         shutil.copy(img_dir, stage_4_output_dir)
@@ -197,31 +187,21 @@ if __name__ == "__main__":
     stage_4_output_dir = os.path.join(opts.output_folder, "final_output")
     if not os.path.exists(stage_4_output_dir):
         os.makedirs(stage_4_output_dir)
-    if opts.HR:
-        stage_4_command = (
-            "python align_warp_back_multiple_dlib_HR.py --origin_url "
-            + stage_4_input_image_dir
-            + " --replace_url "
-            + stage_4_input_face_dir
-            + " --save_url "
-            + stage_4_output_dir
-        )
-    else:
-        stage_4_command = (
-            "python align_warp_back_multiple_dlib.py --origin_url "
-            + stage_4_input_image_dir
-            + " --replace_url "
-            + stage_4_input_face_dir
-            + " --save_url "
-            + stage_4_output_dir
-        )
+
+    stage_4_command = (
+        "python align_warp_back_multiple_dlib.py --origin_url "
+        + stage_4_input_image_dir
+        + " --replace_url "
+        + stage_4_input_face_dir
+        + " --save_url "
+        + stage_4_output_dir
+    )
     run_cmd(stage_4_command)
     try:
         shutil.rmtree(stage_1_input_dir)
     except Exception:
         pass
 
-    # shutil.rmtree("checked_images")
     print("Finish Stage 4 ...")
     print("\n")
 

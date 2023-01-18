@@ -175,7 +175,7 @@ Finish Stage 1 ...
 
 def to_numpy(tensor):
     if isinstance(tensor, list):
-        return np.array(tensor) #torch.tensor(tensor)
+        return np.array(tensor)
     elif isinstance(tensor, np.ndarray):
         return tensor
     return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
@@ -301,14 +301,6 @@ if __name__ == "__main__":
         ### Necessary input
 
         generated = run_model_parts(opt, sessions, input, mask)
-
-        # try:
-        #     with torch.no_grad():
-        #         generated = model.inference(input, mask)
-        # except Exception as ex:
-        #     print("Skip %s due to an error:\n%s" % (input_name, str(ex)))
-        #     continue
-
         if input_name.endswith(".jpg"):
             input_name = input_name[:-4] + ".png"
 
