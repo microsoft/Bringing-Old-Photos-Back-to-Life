@@ -83,7 +83,7 @@ def main(config):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("initializing the dataloader")
 
-    if not os.path.exists("onnx_checkpoints"):
+    if not os.path.exists("onnx_models"):
         model = networks.UNet(
             in_channels=1,
             out_channels=1,
