@@ -206,23 +206,16 @@ def run_model_parts(opt, sessions, inst, mask):
         input_concat = mask.data
         inst_data = inst
 
-    # print(input_concat.shape, mask.shape, inst.shape)
-    # [1, 1, 544, 848] [1, 1, 544, 848] [1, 3, 544, 848]
-
     netG_A_encoder_inp = {
         netG_A_encoder.get_inputs()[0].name: to_numpy(inst_data),
-        # netG_A_encoder.get_inputs()[1].name: to_numpy(inst_data)
     }
 
-    # netG_A_encoder_inp =
     netG_A_enc_out = netG_A_encoder.run(None, netG_A_encoder_inp)
-    # print(netG_A_enc_out[0].shape)
 
     mapping_net_inp = {
         mapping_net.get_inputs()[0].name: netG_A_enc_out[0],
         mapping_net.get_inputs()[1].name: to_numpy(input_concat)
     }
-    # label_feat.detach(), inst_data
     mapping_net_out = mapping_net.run(None, mapping_net_inp)
 
     netG_B_decoder_inp = {
@@ -326,7 +319,7 @@ if __name__ == "__main__":
             padding=0,
             normalize=True,
         )
-        print(torch.Tensor(generated).shape)
+        # print(torch.Tensor(generated).shape)
         image_grid = vutils.save_image(
             (torch.Tensor(generated[0]) + 1.0) / 2.0,
             #(generated.data.cpu() + 1.0) / 2.0,

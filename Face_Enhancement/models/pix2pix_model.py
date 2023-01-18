@@ -177,6 +177,7 @@ class Pix2PixModel(torch.nn.Module):
         z = None
         KLD_loss = None
         if self.opt.use_vae:
+            # print(real_image.shape)
             z, mu, logvar = self.encode_z(real_image)
             if compute_kld_loss:
                 KLD_loss = self.KLDLoss(mu, logvar) * self.opt.lambda_kld

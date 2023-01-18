@@ -147,6 +147,11 @@ if __name__ == "__main__":
     face_detector = dlib.get_frontal_face_detector()
     landmark_locator = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
+    # print(face_detector)
+    # print(landmark_locator)
+    # print(type(face_detector))
+    # print(type(landmark_locator))
+
     count = 0
 
     map_id = {}
@@ -181,4 +186,3 @@ if __name__ == "__main__":
 
         if count % 1000 == 0:
             print("%d have finished ..." % (count))
-
