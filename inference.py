@@ -5,6 +5,7 @@ import os
 import argparse
 import shutil
 import sys
+import time
 import cv2
 from subprocess import call
 
@@ -28,7 +29,7 @@ def resize_if_large(image_folder):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input_folder", type=str, default="./scratch_images", help="Test images")
+    parser.add_argument("--input_folder", type=str, default="./restore_photos", help="Test images")
     parser.add_argument(
         "--output_folder",
         type=str,
@@ -70,7 +71,9 @@ if __name__ == "__main__":
             + " --gpu_ids "
             + gpu1
         )
+        start = time.time()
         run_cmd(stage_1_command)
+        print(f"Stage 1 finished in {(time.time() - start):.3}")
     else:
 
         mask_dir = os.path.join(stage_1_output_dir, "masks")
@@ -102,8 +105,12 @@ if __name__ == "__main__":
             + gpu1 + HR_suffix
         )
 
+        start = time.time()
         run_cmd(stage_1_command_1)
+        print(f"Stage 1.1 finished in {(time.time() - start):.3}")
+        start = time.time()
         run_cmd(stage_1_command_2)
+        print(f"Stage 1.2 finished in {(time.time() - start):.3}")
 
     ## Solve the case when there is no face in the old photo
     stage_1_results = os.path.join(stage_1_output_dir, "restored_image")
@@ -113,8 +120,6 @@ if __name__ == "__main__":
     for x in os.listdir(stage_1_results):
         img_dir = os.path.join(stage_1_results, x)
         shutil.copy(img_dir, stage_4_output_dir)
-
-    print("Finish Stage 1 ...")
     print("\n")
 
     ## Stage 2: Face Detection
@@ -133,8 +138,10 @@ if __name__ == "__main__":
         stage_2_command = (
             "python detect_all_dlib.py --url " + stage_2_input_dir + " --save_url " + stage_2_output_dir
         )
+
+    start = time.time()
     run_cmd(stage_2_command)
-    print("Finish Stage 2 ...")
+    print(f"Stage 2 finished in {(time.time() - start):.3}")
     print("\n")
 
     ## Stage 3: Face Restore
@@ -175,8 +182,10 @@ if __name__ == "__main__":
             + stage_3_output_dir
             + " --no_parsing_map"
         )
+
+    start = time.time()
     run_cmd(stage_3_command)
-    print("Finish Stage 3 ...")
+    print(f"Stage 3 finished in {(time.time() - start):.3}")
     print("\n")
 
     ## Stage 4: Warp back
@@ -196,13 +205,10 @@ if __name__ == "__main__":
         + " --save_url "
         + stage_4_output_dir
     )
-    run_cmd(stage_4_command)
-    try:
-        shutil.rmtree(stage_1_input_dir)
-    except Exception:
-        pass
 
-    print("Finish Stage 4 ...")
+    start = time.time()
+    run_cmd(stage_4_command)
+    print(f"Stage 4 finished in {(time.time() - start):.3}")
     print("\n")
 
     print("All the processing is done. Please check the results.")

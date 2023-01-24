@@ -273,6 +273,7 @@ if __name__ == "__main__":
         print("Now you are processing %s" % (input_name))
 
         if opt.NL_use_mask:
+            print("NL_use_mask")
             mask_name = mask_loader[i]
             mask = Image.open(os.path.join(opt.test_mask, mask_name)).convert("RGB")
             if opt.mask_dilation != 0:
@@ -321,4 +322,5 @@ if __name__ == "__main__":
             normalize=True,
         )
 
+        print(f"saved {input_name}")
         origin.save(opt.outputs_dir + "/origin/" + input_name)

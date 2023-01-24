@@ -98,3 +98,4 @@ class TestOptions(BaseOptions):
             "--Scratch_and_Quality_restore", action="store_true", help="For scratched images"
         )
         self.parser.add_argument("--HR", action='store_true',help='Large input size with scratches')
+        self.parser.add_argument("--fd_algo", default='dlib', help='Face detection algo')
