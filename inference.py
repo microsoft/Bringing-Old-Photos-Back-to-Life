@@ -17,19 +17,10 @@ def run_cmd(command):
         sys.exit(1)
 
 
-def resize_if_large(image_folder):
-    os.makedirs("checked_images", exist_ok=True)
-
-    for image_name in os.listdir(image_folder):
-        img = cv2.imread(os.path.join(image_folder, image_name), 0)
-        image_name = os.path.join("checked_images", image_name)
-        cv2.imwrite(image_name, img)
-
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input_folder", type=str, default="./restore_photos", help="Test images")
+    parser.add_argument("--input_folder", type=str, default="./test_images", help="Test images")
     parser.add_argument(
         "--output_folder",
         type=str,
