@@ -211,7 +211,9 @@ def run_model_parts(opt, sessions, inst, mask):
     netG_B_decoder = sessions["netG_B_decoder"]
     mapping_net = sessions["mapping_net"]
 
-    use_gpu = len(opt.gpu_ids) > 0
+    # use_gpu = len(opt.gpu_ids) > 0
+    use_gpu = True if torch.cuda.is_available() else False
+    
     if use_gpu:
         input_concat = mask.data.cuda()
         inst_data = inst.cuda()
