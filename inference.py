@@ -20,7 +20,7 @@ def run_cmd(command):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input_folder", type=str, default="./test_images", help="Test images")
+    parser.add_argument("--input_folder", type=str, default="./restore_photos_1", help="Test images")
     parser.add_argument(
         "--output_folder",
         type=str,

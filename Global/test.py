@@ -354,6 +354,9 @@ if __name__ == "__main__":
 
         image_grid = ((torch.Tensor(generated[0]) + 1.0) / 2.0).numpy()
         image_grid = (255 * image_grid).astype(np.uint8)
+        if len(image_grid.shape) > 3:
+            image_grid = image_grid[0].transpose(1,2,0)
+            image_grid = cv2.cvtColor(image_grid, cv2.COLOR_RGB2BGR)
 
         # print()
         cv2.imwrite(
@@ -364,6 +367,8 @@ if __name__ == "__main__":
         # exit()
         #
         # print(f"{i}-th image")
+
+        print(image_grid.shape)
 
         print(f"saved {input_name}")
         origin.save(opt.outputs_dir + "/origin/" + input_name)
