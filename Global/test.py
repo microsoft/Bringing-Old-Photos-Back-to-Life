@@ -277,6 +277,7 @@ if __name__ == "__main__":
 
     dataset_size = 0
 
+    os.makedirs(opt.test_input, exist_okay=True)
     input_loader = os.listdir(opt.test_input)
     dataset_size = len(input_loader)
     input_loader.sort()
