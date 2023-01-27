@@ -25,7 +25,7 @@ class BaseOptions:
         )
 
         parser.add_argument(
-            "--gpu_ids", type=str, default="0", help="gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU"
+            "--gpu_ids", type=str, default="-1", help="gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU"
         )
         parser.add_argument(
             "--checkpoints_dir", type=str, default="./checkpoints", help="models are saved here"
@@ -281,10 +281,13 @@ class BaseOptions:
             if int_id >= 0:
                 opt.gpu_ids.append(int_id)
 
-        if len(opt.gpu_ids) > 0:
-            print("The main GPU is ")
-            print(opt.gpu_ids[0])
-            torch.cuda.set_device(opt.gpu_ids[0])
+        try:
+            if len(opt.gpu_ids) > 0:
+                print("The main GPU is ")
+                print(opt.gpu_ids[0])
+                torch.cuda.set_device(opt.gpu_ids[0])
+        except:
+            pass
 
         assert (
             len(opt.gpu_ids) == 0 or opt.batchSize % len(opt.gpu_ids) == 0
