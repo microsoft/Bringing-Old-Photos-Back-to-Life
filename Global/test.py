@@ -213,7 +213,7 @@ def run_model_parts(opt, sessions, inst, mask):
 
     # use_gpu = len(opt.gpu_ids) > 0
     use_gpu = True if torch.cuda.is_available() else False
-    
+
     if use_gpu:
         input_concat = mask.data.cuda()
         inst_data = inst.cuda()
@@ -279,7 +279,7 @@ if __name__ == "__main__":
 
     dataset_size = 0
 
-    os.makedirs(opt.test_input, exist_okay=True)
+    os.makedirs(opt.test_input, exist_ok=True)
     input_loader = os.listdir(opt.test_input)
     dataset_size = len(input_loader)
     input_loader.sort()
