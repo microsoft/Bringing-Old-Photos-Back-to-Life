@@ -27,9 +27,9 @@ The framework now supports the restoration of high-resolution input.
 
 <img src='imgs/HR_result.png'>
 
-Training code is available and welcome to have a try and learn the training details. 
+Training code is available and welcome to have a try and learn the training details.
 
-You can now play with our [Colab](https://colab.research.google.com/drive/1NEm6AsybIiC5TwTU_4DqDkQO0nFRB-uA?usp=sharing) and try it on your photos. 
+You can now play with our [Colab](https://colab.research.google.com/drive/1NEm6AsybIiC5TwTU_4DqDkQO0nFRB-uA?usp=sharing) and try it on your photos.
 
 ## Requirement
 The code is tested on Ubuntu with Nvidia GPUs and CUDA installed. Python>=3.6 is required to run the code.
@@ -72,6 +72,20 @@ cd Global/
 wget https://github.com/microsoft/Bringing-Old-Photos-Back-to-Life/releases/download/v1.0/global_checkpoints.zip
 unzip global_checkpoints.zip
 cd ../
+```
+
+Download onnx models
+```
+pip install gdown
+cd Face_Enhancement/onnx_models
+gdown --id 1ACePgFrMAfgW13RbNTAjmjbyMAOCM4p7
+cd ../../
+cd Global/onnx_models
+gdown --id 1wGySzhZOnWz2NWpbYLmmIKqYmrz8lM6r
+gdown --id 1WjuvB61wLp7vGKdCb6DdK9qEKleLYUIl
+gdown --id 1i_L_OHY_RNtgJYWhRNh29uNqnSwYmXKh
+gdown --id 1iK-LITVCWAxMQAgLzewKD8nzdi3drbDd
+cd ../../
 ```
 
 Install dependencies:
@@ -164,9 +178,9 @@ We use a progressive generator to refine the face regions of old photos. More de
 
 <img src='imgs/face.png'>
 
-> *NOTE*: 
-> This repo is mainly for research purpose and we have not yet optimized the running performance. 
-> 
+> *NOTE*:
+> This repo is mainly for research purpose and we have not yet optimized the running performance.
+>
 > Since the model is pretrained with 256*256 images, the model may not work ideally for arbitrary resolution.
 
 ### 5) GUI
