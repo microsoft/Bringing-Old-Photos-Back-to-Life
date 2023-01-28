@@ -193,13 +193,22 @@ def get_onnx_sessions():
     }
 
 
-def resize_if_large(rgb_tensor, mask_tensor, max_size=1000):
+def resize_image_tensor(img_tensor, target_size):
+    t = transforms.Resize(target_size)
+    img_tensor = t(torch.tensor(img_tensor))
+    return img_tensor
+
+
+def resize_if_large(rgb_tensor, mask_tensor, max_size=950):
     orig_size = None
     h, w = rgb_tensor.shape[-2], rgb_tensor.shape[-1]
+    # 400 x 400 is an optimal size of pictures
+    factor = int(max(h, w) // 400)
+
     if h > max_size or w > max_size:
-        t = transforms.Resize((h // 4, w // 4))
-        rgb_tensor = t(torch.tensor(rgb_tensor))
-        mask_tensor = t(torch.tensor(mask_tensor))
+        target_size = (h // factor, w // factor)
+        rgb_tensor = resize_image_tensor(rgb_tensor, target_size)
+        mask_tensor = resize_image_tensor(mask_tensor, target_size)
         rgb_tensor = to_numpy(rgb_tensor)
         mask_tensor = to_numpy(mask_tensor)
         orig_size = (h, w)
@@ -210,8 +219,6 @@ def run_model_parts(opt, sessions, inst, mask):
     netG_A_encoder = sessions["netG_A_encoder"]
     netG_B_decoder = sessions["netG_B_decoder"]
     mapping_net = sessions["mapping_net"]
-
-    # use_gpu = len(opt.gpu_ids) > 0
     use_gpu = True if torch.cuda.is_available() else False
 
     if use_gpu:
@@ -223,7 +230,6 @@ def run_model_parts(opt, sessions, inst, mask):
 
     inst_data = to_numpy(inst_data)
     input_concat = to_numpy(input_concat)
-    # print(inst_data.shape, input_concat.shape)
     inst_data, input_concat, origin_size = resize_if_large(
         inst_data, input_concat)
 
@@ -238,7 +244,6 @@ def run_model_parts(opt, sessions, inst, mask):
         mapping_net.get_inputs()[1].name: input_concat
     }
 
-    # print(mapping_net_inp)
     mapping_net_out = mapping_net.run(None, mapping_net_inp)
 
     netG_B_decoder_inp = {
@@ -246,15 +251,10 @@ def run_model_parts(opt, sessions, inst, mask):
     netG_B_dec_out = netG_B_decoder.run(None, netG_B_decoder_inp)
 
     if origin_size is not None:
-        print(netG_B_dec_out[0].shape, origin_size)
-        print(type(netG_B_dec_out))
-        # print(len(netG_B_dec_out))
+        netG_B_dec_out = [resize_image_tensor(
+            netG_B_dec_out[0], origin_size)]
 
     return netG_B_dec_out
-
-
-def resize_back(netG_B_dec_out, origin_size):
-    print(netG_B_dec_out)
 
 
 if __name__ == "__main__":
@@ -306,7 +306,6 @@ if __name__ == "__main__":
         print("Now you are processing %s" % (input_name))
 
         if opt.NL_use_mask:
-            # print("NL_use_mask")
             mask_name = mask_loader[i]
             mask = Image.open(os.path.join(opt.test_mask, mask_name)).convert("RGB")
             if opt.mask_dilation != 0:
@@ -345,10 +344,9 @@ if __name__ == "__main__":
             padding=0,
             normalize=True,
         )
-        # print(torch.Tensor(generated).shape)
+
         image_grid = vutils.save_image(
             (torch.Tensor(generated[0]) + 1.0) / 2.0,
-            #(generated.data.cpu() + 1.0) / 2.0,
             opt.outputs_dir + "/restored_image/" + input_name,
             nrow=1,
             padding=0,
@@ -361,17 +359,9 @@ if __name__ == "__main__":
             image_grid = image_grid[0].transpose(1,2,0)
             image_grid = cv2.cvtColor(image_grid, cv2.COLOR_RGB2BGR)
 
-        # print()
         cv2.imwrite(
             opt.outputs_dir + "/restored_image/" + input_name,
             image_grid)
-
-        # print(image_grid)
-        # exit()
-        #
-        # print(f"{i}-th image")
-
-        print(image_grid.shape)
 
         print(f"saved {input_name}")
         origin.save(opt.outputs_dir + "/origin/" + input_name)
