@@ -199,11 +199,11 @@ def resize_image_tensor(img_tensor, target_size):
     return img_tensor
 
 
-def resize_if_large(rgb_tensor, mask_tensor, max_size=950):
+def resize_if_large(rgb_tensor, mask_tensor, max_size=850):
     orig_size = None
     h, w = rgb_tensor.shape[-2], rgb_tensor.shape[-1]
     # 400 x 400 is an optimal size of pictures
-    factor = int(max(h, w) // 400)
+    factor = int(max(h, w) // 300)
 
     if h > max_size or w > max_size:
         target_size = (h // factor, w // factor)
