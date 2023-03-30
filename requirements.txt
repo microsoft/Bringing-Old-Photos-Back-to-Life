@@ -10,5 +10,5 @@ tensorboardX
 scipy
 opencv-python
 einops
-PySimpleGUI
+PySimpleGUI>=4.34.0,<=4.60.3
 matplotlib
