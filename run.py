@@ -24,7 +24,7 @@ if __name__ == "__main__":
         default="./output",
         help="Restored images, please use the absolute path",
     )
-    parser.add_argument("--GPU", type=str, default="0", help="0,1,2")
+    parser.add_argument("--GPU", type=str, help="choose the gpu to use or -1 to use cpu. can choose a single gpu or multiple gpus in a comma separated list. will use all available gpus if no argument is provided")
     parser.add_argument(
         "--checkpoint_name", type=str, default="Setting_9_epoch_100", help="choose which checkpoint"
     )
@@ -32,7 +32,13 @@ if __name__ == "__main__":
     parser.add_argument("--HR", action='store_true')
     opts = parser.parse_args()
 
-    gpu1 = opts.GPU
+    if opts.GPU is None:
+        if torch.cuda.is_available():
+            gpu1 = ','.join(map(str, range(torch.cuda.device_count())))
+        else:
+            gpu1 = '-1'
+    else:
+        gpu1 = opts.GPU 
 
     # resolve relative paths before changing directory
     opts.input_folder = os.path.abspath(opts.input_folder)
