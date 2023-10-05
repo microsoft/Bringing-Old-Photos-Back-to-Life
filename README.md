@@ -82,7 +82,7 @@ pip install -r requirements.txt
 
 ## :rocket: How to use?
 
-**Note**: GPU can be set 0 or 0,1,2 or 0,2; use -1 for CPU
+**Note**: GPU can be set 0 or 0,1,2 or 0,2; use -1 for CPU. run.py will use all available gpus or cpu if no argument is provided.
 
 ### 1) Full Pipeline
 
