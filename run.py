@@ -24,7 +24,7 @@ if __name__ == "__main__":
         default="./output",
         help="Restored images, please use the absolute path",
     )
-    parser.add_argument("--GPU", type=str, default="6,7", help="0,1,2")
+    parser.add_argument("--GPU", type=str, default="0", help="0,1,2")
     parser.add_argument(
         "--checkpoint_name", type=str, default="Setting_9_epoch_100", help="choose which checkpoint"
     )
