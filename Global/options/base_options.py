@@ -3,6 +3,8 @@
 
 import argparse
 import os
+
+from numpy.lib._iotools import str2bool
 from util import util
 import torch
 
@@ -11,7 +13,6 @@ class BaseOptions:
     def __init__(self):
         self.parser = argparse.ArgumentParser()
         self.initialized = False
-
     def initialize(self):
         # experiment specifics
         self.parser.add_argument(
@@ -22,6 +23,9 @@ class BaseOptions:
         )
         self.parser.add_argument(
             "--gpu_ids", type=str, default="0", help="gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU"
+        )
+        self.parser.add_argument(
+            "--mps", type=str2bool, default=False, help="if use M chip, set true"
         )
         self.parser.add_argument(
             "--checkpoints_dir", type=str, default="./checkpoints", help="models are saved here"
@@ -348,10 +352,15 @@ class BaseOptions:
             if int_id >= 0:
                 self.opt.gpu_ids.append(int_id)
 
-        # set gpu ids
-        if len(self.opt.gpu_ids) > 0:
-            # pass
-            torch.cuda.set_device(self.opt.gpu_ids[0])
+        if self.opt.mps :
+            # use apple m chip
+            torch.device("mps")
+        else:
+            # use gpu or cpu
+            if len(self.opt.gpu_ids) > 0:
+                # pass
+                torch.cuda.set_device(self.opt.gpu_ids[0])
+
 
         args = vars(self.opt)
 
@@ -371,3 +380,5 @@ class BaseOptions:
                     opt_file.write("%s: %s\n" % (str(k), str(v)))
                 opt_file.write("-------------- End ----------------\n")
         return self.opt
+
+

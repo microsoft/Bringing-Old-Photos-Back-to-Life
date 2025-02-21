@@ -7,6 +7,9 @@ import shutil
 import sys
 from subprocess import call
 
+from numpy.lib._iotools import str2bool
+
+
 def run_cmd(command):
     try:
         call(command, shell=True)
@@ -25,6 +28,7 @@ if __name__ == "__main__":
         help="Restored images, please use the absolute path",
     )
     parser.add_argument("--GPU", type=str, default="6,7", help="0,1,2")
+    parser.add_argument("--mps", type=str2bool, default=False, help="if use mps acceleration, set true")
     parser.add_argument(
         "--checkpoint_name", type=str, default="Setting_9_epoch_100", help="choose which checkpoint"
     )
@@ -58,6 +62,8 @@ if __name__ == "__main__":
             + stage_1_output_dir
             + " --gpu_ids "
             + gpu1
+            + " --mps "
+            + str(opts.mps)
         )
         run_cmd(stage_1_command)
     else:
@@ -73,6 +79,8 @@ if __name__ == "__main__":
             + " --input_size full_size"
             + " --GPU "
             + gpu1
+            + " --mps "
+            + str(opts.mps)
         )
 
         if opts.HR:
@@ -89,6 +97,8 @@ if __name__ == "__main__":
             + stage_1_output_dir
             + " --gpu_ids "
             + gpu1 + HR_suffix
+            + " --mps "
+            + str(opts.mps)
         )
 
         run_cmd(stage_1_command_1)
@@ -146,6 +156,8 @@ if __name__ == "__main__":
             + opts.checkpoint_name
             + " --gpu_ids "
             + gpu1
+            + " --mps "
+            + str(opts.mps)
             + " --load_size 512 --label_nc 18 --no_instance --preprocess_mode resize --batchSize 1 --results_dir "
             + stage_3_output_dir
             + " --no_parsing_map"
@@ -160,6 +172,8 @@ if __name__ == "__main__":
             + opts.checkpoint_name
             + " --gpu_ids "
             + gpu1
+            + " --mps "
+            + str(opts.mps)
             + " --load_size 256 --label_nc 18 --no_instance --preprocess_mode resize --batchSize 4 --results_dir "
             + stage_3_output_dir
             + " --no_parsing_map"

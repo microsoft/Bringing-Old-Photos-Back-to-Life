@@ -17,7 +17,6 @@ class Pix2PixModel(torch.nn.Module):
         self.opt = opt
         self.FloatTensor = torch.cuda.FloatTensor if self.use_gpu() else torch.FloatTensor
         self.ByteTensor = torch.cuda.ByteTensor if self.use_gpu() else torch.ByteTensor
-
         self.netG, self.netD, self.netE = self.initialize_networks(opt)
 
         # set loss functions
@@ -103,13 +102,20 @@ class Pix2PixModel(torch.nn.Module):
         # data['label'] = data['label'].long()
 
         if not self.opt.isTrain:
-            if self.use_gpu():
+            if self.use_mps():
+                data["label"] = data["label"].to(device="mps")
+                data["image"] = data["image"].to(device="mps")
+            elif self.use_gpu():
                 data["label"] = data["label"].cuda()
                 data["image"] = data["image"].cuda()
             return data["label"], data["image"], data["image"]
 
         ## While testing, the input image is the degraded face
-        if self.use_gpu():
+        if self.use_mps():
+            data["label"] = data["label"].to(device="mps")
+            data["degraded_image"] = data["degraded_image"].to(device="mps")
+            data["image"] = data["image"].to(device="mps")
+        elif self.use_gpu():
             data["label"] = data["label"].cuda()
             data["degraded_image"] = data["degraded_image"].cuda()
             data["image"] = data["image"].cuda()
@@ -244,3 +250,5 @@ class Pix2PixModel(torch.nn.Module):
 
     def use_gpu(self):
         return len(self.opt.gpu_ids) > 0
+    def use_mps(self):
+        return self.opt.mps

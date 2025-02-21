@@ -143,11 +143,17 @@ class Pix2PixHDModel_Mapping(BaseModel):
             self.netG_A.eval()
             self.netG_B.eval()
 
-        if opt.gpu_ids:
-            self.netG_A.cuda(opt.gpu_ids[0])
-            self.netG_B.cuda(opt.gpu_ids[0])
-            self.mapping_net.cuda(opt.gpu_ids[0])
-        
+        if opt.mps:
+            self.netG_A.to('mps')
+            self.netG_B.to('mps')
+            self.mapping_net.to('mps')
+        else:
+            if len(opt.gpu_ids) > 0:
+                # use cuda or use cpu
+                self.netG_A.cuda(opt.gpu_ids[0])
+                self.netG_B.cuda(opt.gpu_ids[0])
+                self.mapping_net.cuda(opt.gpu_ids[0])
+
         if not self.isTrain:
             self.load_network(self.mapping_net, "mapping_net", opt.which_epoch)
 
@@ -324,13 +330,19 @@ class Pix2PixHDModel_Mapping(BaseModel):
 
     def inference(self, label, inst):
 
-        use_gpu = len(self.opt.gpu_ids) > 0
-        if use_gpu:
-            input_concat = label.data.cuda()
-            inst_data = inst.cuda()
-        else:
+        if self.opt.mps:
+            label = label.to("mps")
+            inst = inst.to("mps")
             input_concat = label.data
             inst_data = inst
+        else:
+            use_gpu = len(self.opt.gpu_ids) > 0
+            if use_gpu:
+                input_concat = label.data.cuda()
+                inst_data = inst.cuda()
+            else:
+                input_concat = label.data
+                inst_data = inst
 
         label_feat = self.netG_A.forward(input_concat, flow="enc")
 

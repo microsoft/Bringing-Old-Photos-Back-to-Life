@@ -13,6 +13,7 @@ import torch
 import torch.nn.functional as F
 import torchvision as tv
 from PIL import Image, ImageFile
+from numpy.lib._iotools import str2bool
 
 from detection_models import networks
 from detection_util.util import *
@@ -93,10 +94,13 @@ def main(config):
     model.load_state_dict(checkpoint["model_state"])
     print("model weights loaded")
 
-    if config.GPU >= 0:
-        model.to(config.GPU)
-    else: 
-        model.cpu()
+    if config.mps:
+        model.to("mps")
+    else:
+        if config.GPU >= 0:
+            model.to(config.GPU)
+        else:
+            model.cpu()
     model.eval()
 
     ## dataloader and transformation
@@ -139,11 +143,13 @@ def main(config):
         scratch_image = torch.unsqueeze(scratch_image, 0)
         _, _, ow, oh = scratch_image.shape
         scratch_image_scale = scale_tensor(scratch_image)
-
-        if config.GPU >= 0:
-            scratch_image_scale = scratch_image_scale.to(config.GPU)
+        if config.mps:
+            scratch_image_scale = scratch_image_scale.to("mps")
         else:
-            scratch_image_scale = scratch_image_scale.cpu()
+            if config.GPU >= 0:
+                scratch_image_scale = scratch_image_scale.to(config.GPU)
+            else:
+                scratch_image_scale = scratch_image_scale.cpu()
         with torch.no_grad():
             P = torch.sigmoid(model(scratch_image_scale))
 
@@ -170,6 +176,7 @@ if __name__ == "__main__":
     # parser.add_argument('--checkpoint_name', type=str, default="FT_Epoch_latest.pt", help='Checkpoint Name')
 
     parser.add_argument("--GPU", type=int, default=0)
+    parser.add_argument("--mps", type=str2bool, default=False, help="if use mps acceleration, set true")
     parser.add_argument("--test_path", type=str, default=".")
     parser.add_argument("--output_dir", type=str, default=".")
     parser.add_argument("--input_size", type=str, default="scale_256", help="resize_256|full_size|scale_256")

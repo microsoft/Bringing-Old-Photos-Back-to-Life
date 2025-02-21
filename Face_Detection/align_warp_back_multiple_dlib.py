@@ -111,8 +111,8 @@ def match_histograms(src_image, ref_image):
 
 def _standard_face_pts():
     pts = (
-        np.array([196.0, 226.0, 316.0, 226.0, 256.0, 286.0, 220.0, 360.4, 292.0, 360.4], np.float32) / 256.0
-        - 1.0
+            np.array([196.0, 226.0, 316.0, 226.0, 256.0, 286.0, 220.0, 360.4, 292.0, 360.4], np.float32) / 256.0
+            - 1.0
     )
 
     return np.reshape(pts, (5, 2))
@@ -125,7 +125,6 @@ def _origin_face_pts():
 
 
 def compute_transformation_matrix(img, landmark, normalize, target_face_scale=1.0):
-
     std_pts = _standard_face_pts()  # [-1,1]
     target_pts = (std_pts * target_face_scale + 1) / 2 * 256.0
 
@@ -146,7 +145,6 @@ def compute_transformation_matrix(img, landmark, normalize, target_face_scale=1.
 
 
 def compute_inverse_transformation_matrix(img, landmark, normalize, target_face_scale=1.0):
-
     std_pts = _standard_face_pts()  # [-1,1]
     target_pts = (std_pts * target_face_scale + 1) / 2 * 256.0
 
@@ -196,8 +194,7 @@ def affine2theta(affine, input_w, input_h, target_w, target_h):
 
 
 def blur_blending(im1, im2, mask):
-
-    mask *= 255.0
+    mask = mask * 255.0
 
     kernel = np.ones((10, 10), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=1)
@@ -215,8 +212,8 @@ def blur_blending(im1, im2, mask):
 
 
 def blur_blending_cv2(im1, im2, mask):
-
-    mask *= 255.0
+    # mask = mask * 255.0
+    mask = mask * 255.0
 
     kernel = np.ones((9, 9), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=3)
@@ -237,14 +234,13 @@ def blur_blending_cv2(im1, im2, mask):
 
 #     Image.composite(
 def Poisson_blending(im1, im2, mask):
-
     # mask=1-mask
-    mask *= 255
+    mask = mask * 255
     kernel = np.ones((10, 10), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=1)
     mask /= 255
     mask = 1 - mask
-    mask *= 255
+    mask = mask * 255
 
     mask = mask[:, :, 0]
     width, height, channels = im1.shape
@@ -257,8 +253,7 @@ def Poisson_blending(im1, im2, mask):
 
 
 def Poisson_B(im1, im2, mask, center):
-
-    mask *= 255
+    mask = mask * 255
 
     result = cv2.seamlessClone(
         im2.astype("uint8"), im1.astype("uint8"), mask.astype("uint8"), center, cv2.NORMAL_CLONE
@@ -268,7 +263,6 @@ def Poisson_B(im1, im2, mask, center):
 
 
 def seamless_clone(old_face, new_face, raw_mask):
-
     height, width, _ = old_face.shape
     height = height // 2
     width = width // 2
@@ -308,14 +302,16 @@ def seamless_clone(old_face, new_face, raw_mask):
 
 def get_landmark(face_landmarks, id):
     part = face_landmarks.part(id)
-    x = part.x
+    if hasattr(part, 'img'):
+        x = part.img
+    else:
+        x = part.x
     y = part.y
 
     return (x, y)
 
 
 def search(face_landmarks):
-
     x1, y1 = get_landmark(face_landmarks, 36)
     x2, y2 = get_landmark(face_landmarks, 39)
     x3, y3 = get_landmark(face_landmarks, 42)
@@ -396,7 +392,6 @@ if __name__ == "__main__":
             affine_inverse = affine.inverse
             cur_face = aligned_face
             if replace_url != "":
-
                 face_name = x[:-4] + "_" + str(face_id + 1) + ".png"
                 cur_url = os.path.join(replace_url, face_name)
                 restored_face = Image.open(cur_url).convert("RGB")
@@ -434,4 +429,3 @@ if __name__ == "__main__":
 
         if count % 1000 == 0:
             print("%d have finished ..." % (count))
-

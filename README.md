@@ -34,6 +34,10 @@ You can now play with our [Colab](https://colab.research.google.com/drive/1NEm6A
 ## Requirement
 The code is tested on Ubuntu with Nvidia GPUs and CUDA installed. Python>=3.6 is required to run the code.
 
+### APPLE M CHIP
+The code is tested on macOS with M2-chip and Python =3.9.21(Because of python has supported M-chips since version 3.9).  
+If you are using mps acceleration, set the parameter mps to true
+
 ## Installation
 
 Clone the Synchronized-BatchNorm-PyTorch repository for
@@ -83,6 +87,7 @@ pip install -r requirements.txt
 ## :rocket: How to use?
 
 **Note**: GPU can be set 0 or 0,1,2 or 0,2; use -1 for CPU
+**Note**: mps can be set True or False
 
 ### 1) Full Pipeline
 
