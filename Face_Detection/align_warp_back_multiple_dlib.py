@@ -103,7 +103,8 @@ def match_histograms(src_image, ref_image):
     red_after_transform = cv2.LUT(src_r, red_lookup_table)
 
     # Put the image back together
-    image_after_matching = cv2.merge([blue_after_transform, green_after_transform, red_after_transform])
+    image_after_matching = cv2.merge(
+        [blue_after_transform, green_after_transform, red_after_transform])
     image_after_matching = cv2.convertScaleAbs(image_after_matching)
 
     return image_after_matching
@@ -111,7 +112,8 @@ def match_histograms(src_image, ref_image):
 
 def _standard_face_pts():
     pts = (
-        np.array([196.0, 226.0, 316.0, 226.0, 256.0, 286.0, 220.0, 360.4, 292.0, 360.4], np.float32) / 256.0
+        np.array([196.0, 226.0, 316.0, 226.0, 256.0, 286.0,
+                 220.0, 360.4, 292.0, 360.4], np.float32) / 256.0
         - 1.0
     )
 
@@ -119,7 +121,8 @@ def _standard_face_pts():
 
 
 def _origin_face_pts():
-    pts = np.array([196.0, 226.0, 316.0, 226.0, 256.0, 286.0, 220.0, 360.4, 292.0, 360.4], np.float32)
+    pts = np.array([196.0, 226.0, 316.0, 226.0, 256.0, 286.0,
+                   220.0, 360.4, 292.0, 360.4], np.float32)
 
     return np.reshape(pts, (5, 2))
 
@@ -188,10 +191,12 @@ def affine2theta(affine, input_w, input_h, target_w, target_h):
     theta = np.zeros([2, 3])
     theta[0, 0] = param[0, 0] * input_h / target_h
     theta[0, 1] = param[0, 1] * input_w / target_h
-    theta[0, 2] = (2 * param[0, 2] + param[0, 0] * input_h + param[0, 1] * input_w) / target_h - 1
+    theta[0, 2] = (2 * param[0, 2] + param[0, 0] * input_h +
+                   param[0, 1] * input_w) / target_h - 1
     theta[1, 0] = param[1, 0] * input_h / target_w
     theta[1, 1] = param[1, 1] * input_w / target_w
-    theta[1, 2] = (2 * param[1, 2] + param[1, 0] * input_h + param[1, 1] * input_w) / target_w - 1
+    theta[1, 2] = (2 * param[1, 2] + param[1, 0] * input_h +
+                   param[1, 1] * input_w) / target_w - 1
     return theta
 
 
@@ -215,8 +220,8 @@ def blur_blending(im1, im2, mask):
 
 
 def blur_blending_cv2(im1, im2, mask):
-
-    mask *= 255.0
+    # Convert mask to float64 before multiplication
+    mask = mask.astype(np.float64) * 255.0
 
     kernel = np.ones((9, 9), np.uint8)
     mask = cv2.erode(mask, kernel, iterations=3)
@@ -250,7 +255,8 @@ def Poisson_blending(im1, im2, mask):
     width, height, channels = im1.shape
     center = (int(height / 2), int(width / 2))
     result = cv2.seamlessClone(
-        im2.astype("uint8"), im1.astype("uint8"), mask.astype("uint8"), center, cv2.MIXED_CLONE
+        im2.astype("uint8"), im1.astype("uint8"), mask.astype(
+            "uint8"), center, cv2.MIXED_CLONE
     )
 
     return result / 255.0
@@ -261,7 +267,8 @@ def Poisson_B(im1, im2, mask, center):
     mask *= 255
 
     result = cv2.seamlessClone(
-        im2.astype("uint8"), im1.astype("uint8"), mask.astype("uint8"), center, cv2.NORMAL_CLONE
+        im2.astype("uint8"), im1.astype("uint8"), mask.astype(
+            "uint8"), center, cv2.NORMAL_CLONE
     )
 
     return result / 255
@@ -276,8 +283,10 @@ def seamless_clone(old_face, new_face, raw_mask):
     y_indices, x_indices, _ = np.nonzero(raw_mask)
     y_crop = slice(np.min(y_indices), np.max(y_indices))
     x_crop = slice(np.min(x_indices), np.max(x_indices))
-    y_center = int(np.rint((np.max(y_indices) + np.min(y_indices)) / 2 + height))
-    x_center = int(np.rint((np.max(x_indices) + np.min(x_indices)) / 2 + width))
+    y_center = int(
+        np.rint((np.max(y_indices) + np.min(y_indices)) / 2 + height))
+    x_center = int(
+        np.rint((np.max(x_indices) + np.min(x_indices)) / 2 + width))
 
     insertion = np.rint(new_face[y_crop, x_crop] * 255.0).astype("uint8")
     insertion_mask = np.rint(raw_mask[y_crop, x_crop] * 255.0).astype("uint8")
@@ -347,8 +356,10 @@ def search(face_landmarks):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--origin_url", type=str, default="./", help="origin images")
-    parser.add_argument("--replace_url", type=str, default="./", help="restored faces")
+    parser.add_argument("--origin_url", type=str,
+                        default="./", help="origin images")
+    parser.add_argument("--replace_url", type=str,
+                        default="./", help="restored faces")
     parser.add_argument("--save_url", type=str, default="./save")
     opts = parser.parse_args()
 
@@ -360,7 +371,8 @@ if __name__ == "__main__":
         os.makedirs(save_url)
 
     face_detector = dlib.get_frontal_face_detector()
-    landmark_locator = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+    landmark_locator = dlib.shape_predictor(
+        "shape_predictor_68_face_landmarks.dat")
 
     count = 0
 
@@ -387,8 +399,10 @@ if __name__ == "__main__":
             current_fl = search(face_landmarks)
 
             forward_mask = np.ones_like(image).astype("uint8")
-            affine = compute_transformation_matrix(image, current_fl, False, target_face_scale=1.3)
-            aligned_face = warp(image, affine, output_shape=(256, 256, 3), preserve_range=True)
+            affine = compute_transformation_matrix(
+                image, current_fl, False, target_face_scale=1.3)
+            aligned_face = warp(image, affine, output_shape=(
+                256, 256, 3), preserve_range=True)
             forward_mask = warp(
                 forward_mask, affine, output_shape=(256, 256, 3), order=0, preserve_range=True
             )
@@ -403,7 +417,7 @@ if __name__ == "__main__":
                 restored_face = np.array(restored_face)
                 cur_face = restored_face
 
-            ## Histogram Color matching
+            # Histogram Color matching
             A = cv2.cvtColor(aligned_face.astype("uint8"), cv2.COLOR_RGB2BGR)
             B = cv2.cvtColor(cur_face.astype("uint8"), cv2.COLOR_RGB2BGR)
             B = match_histograms(B, A)
@@ -434,4 +448,3 @@ if __name__ == "__main__":
 
         if count % 1000 == 0:
             print("%d have finished ..." % (count))
-
